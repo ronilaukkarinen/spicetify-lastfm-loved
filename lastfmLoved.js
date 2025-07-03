@@ -321,13 +321,35 @@
         };
 
         const containerStyle = {
-            display: 'flex',
-            justifyContent: 'center',
+            boxSizing: 'border-box',
+            WebkitTapHighlightColor: 'transparent',
+            backgroundColor: 'transparent',
+            border: '0px',
+            borderRadius: 'var(--encore-button-corner-radius, 9999px)',
+            cursor: 'pointer',
+            textAlign: 'center',
+            textDecoration: 'none',
+            touchAction: 'manipulation',
+            transitionDuration: 'var(--shortest-3)',
+            transitionTimingFunction: 'var(--productive)',
+            userSelect: 'none',
+            verticalAlign: 'middle',
+            willChange: 'transform',
+            color: 'var(--text-bright-accent, #107434)',
+            minInlineSize: '0px',
+            minBlockSize: 'var(--encore-control-size-smaller, 32px)',
+            paddingBlock: 'var(--encore-spacing-tighter-2, 8px)',
+            paddingInline: '0px',
+            display: 'inline-flex',
+            gap: 'var(--encore-spacing-tighter-2)',
+            WebkitBoxAlign: 'center',
             alignItems: 'center',
-            width: '32px',
-            height: '32px',
+            WebkitBoxPack: 'center',
+            transitionProperty: 'color, transform',
             opacity: hasData ? 1 : 0.3,
-            transition: 'opacity 0.3s ease'
+            transition: 'opacity 0.3s ease',
+            position: 'relative',
+            top: '1px'
         };
 
         if (loading) {
@@ -357,6 +379,55 @@
                 disabled: !hasData
             })
         );
+    }
+
+    function addNowPlayingHeart() {
+        const nowPlayingWidget = document.querySelector('[data-testid="now-playing-widget"]');
+        if (!nowPlayingWidget || nowPlayingWidget.querySelector('.lastfm-loved-nowplaying')) {
+            return; // No now playing widget or already has our heart
+        }
+
+        // Extract track and artist info from now playing
+        const trackLink = nowPlayingWidget.querySelector('.main-trackInfo-name a');
+        const artistLink = nowPlayingWidget.querySelector('.main-trackInfo-artists a');
+
+        if (!trackLink || !artistLink) {
+            console.log('Last.fm Loved Extension: Could not find track/artist in now playing');
+            return;
+        }
+
+        const trackName = trackLink.textContent;
+        const artistName = artistLink.textContent;
+
+        console.log(`Last.fm Loved Extension: Adding heart for now playing: ${artistName} - ${trackName}`);
+
+        // Find the button area to insert our heart
+        const buttonArea = nowPlayingWidget.querySelector('.ZbFkATBbLkWh2SHMXDt6');
+
+        if (buttonArea) {
+            // Create heart container
+            const heartContainer = document.createElement('div');
+            heartContainer.className = 'lastfm-loved-nowplaying';
+            // heartContainer.style.cssText = `
+            //     display: flex;
+            //     align-items: center;
+            //     justify-content: center;
+            //     margin-right: 8px;
+            // `;
+
+            // Render React component
+            ReactDOM.render(
+                React.createElement(LastfmLovedCell, {
+                    artist: artistName,
+                    track: trackName
+                }),
+                heartContainer
+            );
+
+            // Insert before the existing buttons
+            buttonArea.insertBefore(heartContainer, buttonArea.firstChild);
+            console.log('Last.fm Loved Extension: Heart added to now playing');
+        }
     }
 
     function addLovedColumn() {
@@ -673,7 +744,8 @@
         mutations.forEach(mutation => {
             mutation.addedNodes.forEach(node => {
                 if (node.nodeType === Node.ELEMENT_NODE &&
-                    !node.classList?.contains('lastfm-loved-cell')) {
+                    !node.classList?.contains('lastfm-loved-cell') &&
+                    !node.classList?.contains('lastfm-loved-nowplaying')) {
                     shouldRun = true;
                 }
             });
@@ -681,6 +753,7 @@
 
         if (shouldRun) {
             addLovedColumn();
+            addNowPlayingHeart();
         }
     });
 
@@ -689,5 +762,6 @@
         subtree: true
     });
 
+    addNowPlayingHeart();
     addLovedColumn();
 })();

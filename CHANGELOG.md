@@ -1,4 +1,8 @@
-### 1.0.0: 2024-07-02
+### 1.1.0: 2025-07-03
+
+* Add heart inside the now playing widget
+
+### 1.0.0: 2025-07-02
 
 * Add heart icon column to playlist views
 * Add heart icon column to artist views
