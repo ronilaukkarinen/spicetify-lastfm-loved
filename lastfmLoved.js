@@ -14,6 +14,29 @@
 
     const CONFIG_KEY = 'lastfm-loved-config';
 
+    // Global state management for heart synchronization
+    const heartComponents = new Set();
+
+    function registerHeartComponent(component) {
+        heartComponents.add(component);
+    }
+
+    function unregisterHeartComponent(component) {
+        heartComponents.delete(component);
+    }
+
+    function syncAllHearts(artist, track, newLovedStatus) {
+        const normalizedArtist = artist.toLowerCase().trim();
+        const normalizedTrack = track.toLowerCase().trim();
+
+        heartComponents.forEach(component => {
+            if (component.artist.toLowerCase().trim() === normalizedArtist &&
+                component.track.toLowerCase().trim() === normalizedTrack) {
+                component.updateLoved(newLovedStatus);
+            }
+        });
+    }
+
     function loadConfig() {
         const config = localStorage.getItem(CONFIG_KEY);
         if (config) {
@@ -38,17 +61,21 @@
     async function getLastfmLovedStatus(artist, track) {
         if (!lastfmApiKey || !lastfmUsername) return null;
 
-        console.log(`Last.fm API Request - Artist: "${artist}", Track: "${track}"`);
+        // Normalize names for consistency
+        const normalizedArtist = artist.toLowerCase().trim();
+        const normalizedTrack = track.toLowerCase().trim();
+
+        console.log(`Last.fm API Request - Artist: "${normalizedArtist}", Track: "${normalizedTrack}"`);
 
         try {
             const response = await fetch(
-                `https://ws.audioscrobbler.com/2.0/?method=track.getInfo&api_key=${lastfmApiKey}&artist=${encodeURIComponent(artist)}&track=${encodeURIComponent(track)}&username=${lastfmUsername}&format=json`
+                `https://ws.audioscrobbler.com/2.0/?method=track.getInfo&api_key=${lastfmApiKey}&artist=${encodeURIComponent(normalizedArtist)}&track=${encodeURIComponent(normalizedTrack)}&username=${lastfmUsername}&format=json`
             );
             const data = await response.json();
 
             if (data.track && data.track.userloved) {
                 const loved = data.track.userloved === '1';
-                console.log(`Last.fm API Result - "${artist} - ${track}" is ${loved ? 'LOVED' : 'NOT LOVED'}`);
+                console.log(`Last.fm API Result - "${normalizedArtist} - ${normalizedTrack}" is ${loved ? 'LOVED' : 'NOT LOVED'}`);
                 return loved;
             }
         } catch (error) {
@@ -219,16 +246,20 @@
             return false;
         }
 
+        // Normalize names for consistency
+        const normalizedArtist = artist.toLowerCase().trim();
+        const normalizedTrack = track.toLowerCase().trim();
+
         const method = isLoved ? 'track.unlove' : 'track.love';
 
         try {
             // Create parameters for API signature
             const params = {
                 api_key: lastfmApiKey,
-                artist: artist,
+                artist: normalizedArtist,
                 method: method,
                 sk: lastfmSessionKey,
-                track: track
+                track: normalizedTrack
             };
 
             // Sort parameters alphabetically and create signature string
@@ -263,6 +294,8 @@
                 return false;
             }
 
+            const newStatus = !isLoved;
+            syncAllHearts(normalizedArtist, normalizedTrack, newStatus);
             return true;
         } catch (error) {
             console.error('Error toggling Last.fm loved status:', error);
@@ -280,14 +313,27 @@
             fill: isLoved ? 'currentColor' : 'none',
             stroke: 'currentColor',
             strokeWidth: '2',
-            transition: 'opacity 0.3s ease, color 0.3s ease'
+            transition: 'opacity 0.3s ease, color 0.3s ease',
+            pointerEvents: (loading || disabled) ? 'none' : 'auto'
+        };
+
+        const handleClick = (e) => {
+            console.log('HeartIcon clicked, loading:', loading, 'disabled:', disabled);
+            if (loading || disabled) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+            if (onClick) {
+                onClick(e);
+            }
         };
 
         return React.createElement(
             'svg',
             {
                 style: heartStyle,
-                onClick: (loading || disabled) ? undefined : onClick,
+                onClick: handleClick,
                 viewBox: '0 0 24 24',
                 xmlns: 'http://www.w3.org/2000/svg'
             },
@@ -302,7 +348,22 @@
         const [loading, setLoading] = useState(false);
         const [hasData, setHasData] = useState(false);
 
+        // Create component reference for global sync
+        const componentRef = React.useRef({
+            artist: artist,
+            track: track,
+            updateLoved: (newStatus) => {
+                console.log(`Syncing heart for "${artist} - ${track}" to ${newStatus ? 'LOVED' : 'UNLOVED'}`);
+                setIsLoved(newStatus);
+            }
+        });
+
         useEffect(() => {
+            // Register this component for global sync
+            componentRef.current.artist = artist;
+            componentRef.current.track = track;
+            registerHeartComponent(componentRef.current);
+
             console.log(`LastfmLovedCell useEffect - Artist: "${artist}", Track: "${track}"`);
             if (artist && track) {
                 setLoading(true);
@@ -315,18 +376,27 @@
                     setLoading(false);
                 });
             }
+
+            // Cleanup function to unregister component
+            return () => {
+                unregisterHeartComponent(componentRef.current);
+            };
         }, [artist, track]);
 
         const handleClick = async () => {
-            if (loading || isLoved === null || !hasData) return;
+            console.log(`Heart clicked for "${artist} - ${track}", current status: ${isLoved}, hasData: ${hasData}, loading: ${loading}`);
+
+            if (loading || isLoved === null || !hasData) {
+                console.log(`Click ignored for "${artist} - ${track}" - not ready`);
+                return;
+            }
 
             console.log(`Toggling loved status for "${artist} - ${track}" from ${isLoved} to ${!isLoved}`);
             setLoading(true);
             const success = await toggleLastfmLoved(artist, track, isLoved);
             if (success) {
-                const newStatus = !isLoved;
-                setIsLoved(newStatus);
-                console.log(`Successfully toggled "${artist} - ${track}" to ${newStatus ? 'LOVED' : 'UNLOVED'}`);
+                console.log(`Successfully toggled "${artist} - ${track}" - sync will handle state update`);
+                // Don't update local state - let global sync handle it
             } else {
                 console.log(`Failed to toggle loved status for "${artist} - ${track}"`);
             }
@@ -430,23 +500,17 @@
                 border: 0;
                 margin-right: 0;
                 margin-left: 12px;
+                padding: 0;
             `;
 
-            // Create icon wrapper to match Spotify button structure
-            const iconWrapper = document.createElement('span');
-            iconWrapper.className = 'button__icon-wrapper';
-            iconWrapper.setAttribute('aria-hidden', 'true');
-
-            // Render React component inside the icon wrapper
+            // Render React component directly in the button
             ReactDOM.render(
                 React.createElement(LastfmLovedCell, {
                     artist: artistName,
                     track: trackName
                 }),
-                iconWrapper
+                heartButton
             );
-
-            heartButton.appendChild(iconWrapper);
 
             // Insert before the existing button area
             buttonArea.parentNode.insertBefore(heartButton, buttonArea);

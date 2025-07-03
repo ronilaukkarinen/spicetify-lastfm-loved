@@ -2,6 +2,7 @@
 
 * Add heart inside the now playing widget
 * Add heart icon to side nav
+* Fixes to loved actions not in sync
 
 ### 1.0.0: 2025-07-02
 
