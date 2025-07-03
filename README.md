@@ -67,15 +67,6 @@
 
 ### 2. Install the extension
 
-#### Via Spicetify Marketplace
-
-```bash
-spicetify config inject_css 1 inject_theme_js 1
-spicetify apply
-spicetify marketplace
-```
-Search for "LastFM Loved Tracks" and install.
-
 #### Manual installation
 
 ```bash
