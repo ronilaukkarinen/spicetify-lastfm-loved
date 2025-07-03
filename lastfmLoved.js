@@ -374,6 +374,11 @@
                     setIsLoved(loved);
                     setHasData(loved !== null);
                     setLoading(false);
+                }).catch(error => {
+                    console.error(`Error getting loved status for "${artist} - ${track}":`, error);
+                    setIsLoved(null);
+                    setHasData(false);
+                    setLoading(false);
                 });
             }
 
@@ -381,7 +386,7 @@
             return () => {
                 unregisterHeartComponent(componentRef.current);
             };
-        }, [artist, track]);
+        }, [artist, track]); // Re-run when artist or track changes
 
         const handleClick = async () => {
             console.log(`Heart clicked for "${artist} - ${track}", current status: ${isLoved}, hasData: ${hasData}, loading: ${loading}`);
@@ -466,9 +471,11 @@
 
     function addSideNavHeart() {
         const sideNavNowPlaying = document.querySelector('.main-nowPlayingView-contextItemInfo');
-        if (!sideNavNowPlaying || sideNavNowPlaying.querySelector('.lastfm-loved-sidenav')) {
-            return; // No side nav now playing or already has our heart
+        if (!sideNavNowPlaying) {
+            return; // No side nav now playing
         }
+
+        const existingHeart = sideNavNowPlaying.parentNode.querySelector('.lastfm-loved-sidenav');
 
         // Extract track and artist info from side nav now playing
         const trackLink = sideNavNowPlaying.querySelector('.main-trackInfo-name a');
@@ -479,11 +486,37 @@
             return;
         }
 
-        const trackName = trackLink.textContent;
+        const trackName = trackLink.textContent.trim();
         // Get the first artist (main artist)
-        const artistName = artistLinks[0].textContent;
+        const artistName = artistLinks[0].textContent.trim();
 
         console.log(`SIDE_NAV - Track: "${trackName}", Artist: "${artistName}"`);
+
+        // If we already have a heart, check if it's for the same track
+        if (existingHeart) {
+            const currentTrack = existingHeart.getAttribute('data-track');
+            const currentArtist = existingHeart.getAttribute('data-artist');
+
+            if (currentTrack === trackName && currentArtist === artistName) {
+                console.log('SIDE_NAV: Heart already exists for current track');
+                return; // Same track, keep existing heart
+            } else {
+                console.log('SIDE_NAV: Track changed, updating heart');
+                // Track changed, update the component with new props
+                ReactDOM.render(
+                    React.createElement(LastfmLovedCell, {
+                        artist: artistName,
+                        track: trackName,
+                        key: `${artistName}-${trackName}`
+                    }),
+                    existingHeart
+                );
+                existingHeart.setAttribute('data-track', trackName);
+                existingHeart.setAttribute('data-artist', artistName);
+                return;
+            }
+        }
+
         console.log(`Last.fm Loved Extension: Adding heart for side nav now playing: ${artistName} - ${trackName}`);
 
         // Find the button area to insert our heart
@@ -495,6 +528,8 @@
             heartButton.className = 'lastfm-loved-sidenav Button-buttonTertiary-medium-iconOnly-useBrowserDefaultFocusStyle-condensed';
             heartButton.setAttribute('aria-label', 'Toggle Last.fm loved');
             heartButton.setAttribute('data-encore-id', 'buttonTertiary');
+            heartButton.setAttribute('data-track', trackName);
+            heartButton.setAttribute('data-artist', artistName);
             heartButton.style.cssText = `
                 background: none;
                 border: 0;
@@ -507,7 +542,8 @@
             ReactDOM.render(
                 React.createElement(LastfmLovedCell, {
                     artist: artistName,
-                    track: trackName
+                    track: trackName,
+                    key: `${artistName}-${trackName}`
                 }),
                 heartButton
             );
@@ -521,10 +557,12 @@
     function addNowPlayingHeart() {
         console.log('addNowPlayingHeart called');
         const nowPlayingWidget = document.querySelector('[data-testid="now-playing-widget"]');
-        if (!nowPlayingWidget || nowPlayingWidget.querySelector('.lastfm-loved-nowplaying')) {
-            console.log('addNowPlayingHeart: No widget or already has heart');
-            return; // No now playing widget or already has our heart
+        if (!nowPlayingWidget) {
+            console.log('addNowPlayingHeart: No widget found');
+            return; // No now playing widget
         }
+
+        const existingHeart = nowPlayingWidget.querySelector('.lastfm-loved-nowplaying');
 
         // Extract track and artist info from now playing
         const trackLink = nowPlayingWidget.querySelector('.main-trackInfo-name a');
@@ -535,10 +573,36 @@
             return;
         }
 
-        const trackName = trackLink.textContent;
-        const artistName = artistLink.textContent;
+        const trackName = trackLink.textContent.trim();
+        const artistName = artistLink.textContent.trim();
 
         console.log(`NOW_PLAYING - Track: "${trackName}", Artist: "${artistName}"`);
+
+        // If we already have a heart, check if it's for the same track
+        if (existingHeart) {
+            const currentTrack = existingHeart.getAttribute('data-track');
+            const currentArtist = existingHeart.getAttribute('data-artist');
+
+            if (currentTrack === trackName && currentArtist === artistName) {
+                console.log('NOW_PLAYING: Heart already exists for current track');
+                return; // Same track, keep existing heart
+            } else {
+                console.log('NOW_PLAYING: Track changed, updating heart');
+                // Track changed, update the component with new props
+                ReactDOM.render(
+                    React.createElement(LastfmLovedCell, {
+                        artist: artistName,
+                        track: trackName,
+                        key: `${artistName}-${trackName}`
+                    }),
+                    existingHeart
+                );
+                existingHeart.setAttribute('data-track', trackName);
+                existingHeart.setAttribute('data-artist', artistName);
+                return;
+            }
+        }
+
         console.log(`Last.fm Loved Extension: Adding heart for now playing: ${artistName} - ${trackName}`);
 
         // Find the button area to insert our heart
@@ -548,18 +612,15 @@
             // Create heart container
             const heartContainer = document.createElement('div');
             heartContainer.className = 'lastfm-loved-nowplaying';
-            // heartContainer.style.cssText = `
-            //     display: flex;
-            //     align-items: center;
-            //     justify-content: center;
-            //     margin-right: 8px;
-            // `;
+            heartContainer.setAttribute('data-track', trackName);
+            heartContainer.setAttribute('data-artist', artistName);
 
             // Render React component
             ReactDOM.render(
                 React.createElement(LastfmLovedCell, {
                     artist: artistName,
-                    track: trackName
+                    track: trackName,
+                    key: `${artistName}-${trackName}`
                 }),
                 heartContainer
             );
@@ -877,7 +938,7 @@
     new Spicetify.Menu.Item('Last.fm Loved Config', false, openConfigModal).register();
 
     loadConfig();
-    console.log('Last.fm Loved Extension: Config loaded - API Key:', !!lastfmApiKey, 'Username:', !!lastfmUsername, 'Session Key:', !!lastfmSessionKey);
+    console.log('Last.fm Loved Extension: Configuration loaded');
 
     const observer = new MutationObserver((mutations) => {
         // Only trigger if it's not our own changes
