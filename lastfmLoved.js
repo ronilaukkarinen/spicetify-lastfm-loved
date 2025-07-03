@@ -381,6 +381,65 @@
         );
     }
 
+    function addSideNavHeart() {
+        const sideNavNowPlaying = document.querySelector('.main-nowPlayingView-contextItemInfo');
+        if (!sideNavNowPlaying || sideNavNowPlaying.querySelector('.lastfm-loved-sidenav')) {
+            return; // No side nav now playing or already has our heart
+        }
+
+        // Extract track and artist info from side nav now playing
+        const trackLink = sideNavNowPlaying.querySelector('.main-trackInfo-name a');
+        const artistLinks = sideNavNowPlaying.querySelectorAll('.main-trackInfo-artists a');
+
+        if (!trackLink || !artistLinks.length) {
+            console.log('Last.fm Loved Extension: Could not find track/artist in side nav now playing');
+            return;
+        }
+
+        const trackName = trackLink.textContent;
+        // Get the first artist (main artist)
+        const artistName = artistLinks[0].textContent;
+
+        console.log(`Last.fm Loved Extension: Adding heart for side nav now playing: ${artistName} - ${trackName}`);
+
+        // Find the button area to insert our heart
+        const buttonArea = sideNavNowPlaying.querySelector('.O5NOY8Xw4NH0IhBZu8tm');
+
+        if (buttonArea) {
+            // Create heart container as a button to match other buttons
+            const heartButton = document.createElement('button');
+            heartButton.className = 'lastfm-loved-sidenav Button-buttonTertiary-medium-iconOnly-useBrowserDefaultFocusStyle-condensed';
+            heartButton.setAttribute('aria-label', 'Toggle Last.fm loved');
+            heartButton.setAttribute('data-encore-id', 'buttonTertiary');
+            heartButton.style.cssText = `
+                background: none;
+                border: 0;
+                margin-right: 0;
+                margin-left: 12px;
+            `;
+
+            // Create icon wrapper to match Spotify button structure
+            const iconWrapper = document.createElement('span');
+            iconWrapper.className = 'button__icon-wrapper';
+            iconWrapper.setAttribute('aria-hidden', 'true');
+
+            // Render React component inside the icon wrapper
+            ReactDOM.render(
+                React.createElement(LastfmLovedCell, {
+                    artist: artistName,
+                    track: trackName
+                }),
+                iconWrapper
+            );
+
+            heartButton.appendChild(iconWrapper);
+
+            // Insert before the existing button area
+            buttonArea.parentNode.insertBefore(heartButton, buttonArea);
+            console.log('Last.fm Loved Extension: Heart added to side nav');
+        }
+    }
+
     function addNowPlayingHeart() {
         const nowPlayingWidget = document.querySelector('[data-testid="now-playing-widget"]');
         if (!nowPlayingWidget || nowPlayingWidget.querySelector('.lastfm-loved-nowplaying')) {
@@ -745,7 +804,8 @@
             mutation.addedNodes.forEach(node => {
                 if (node.nodeType === Node.ELEMENT_NODE &&
                     !node.classList?.contains('lastfm-loved-cell') &&
-                    !node.classList?.contains('lastfm-loved-nowplaying')) {
+                    !node.classList?.contains('lastfm-loved-nowplaying') &&
+                    !node.classList?.contains('lastfm-loved-sidenav')) {
                     shouldRun = true;
                 }
             });
@@ -754,6 +814,7 @@
         if (shouldRun) {
             addLovedColumn();
             addNowPlayingHeart();
+            addSideNavHeart();
         }
     });
 
@@ -762,6 +823,7 @@
         subtree: true
     });
 
+    addSideNavHeart();
     addNowPlayingHeart();
     addLovedColumn();
 })();
