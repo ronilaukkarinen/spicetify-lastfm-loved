@@ -1,4 +1,8 @@
 (function lastfmLoved() {
+    // Security note: This extension handles sensitive Last.fm API credentials.
+    // Console logs are minimized and never expose API keys, session keys, or secrets.
+    // Only boolean flags (hasApiKey, hasSessionKey) and track/artist names are logged for debugging.
+
     if (!Spicetify.Platform || !Spicetify.React || !Spicetify.ReactDOM) {
         setTimeout(lastfmLoved, 100);
         return;
@@ -65,7 +69,7 @@
         const normalizedArtist = artist.toLowerCase().trim();
         const normalizedTrack = track.toLowerCase().trim();
 
-        console.log(`Last.fm API Request - Artist: "${normalizedArtist}", Track: "${normalizedTrack}"`);
+        // console.log(`Last.fm API Request - Artist: "${normalizedArtist}", Track: "${normalizedTrack}"`);
 
         try {
             const response = await fetch(
@@ -75,7 +79,8 @@
 
             if (data.track && data.track.userloved) {
                 const loved = data.track.userloved === '1';
-                console.log(`Last.fm API Result - "${normalizedArtist} - ${normalizedTrack}" is ${loved ? 'LOVED' : 'NOT LOVED'}`);
+                // Only log API results when there might be issues, not for every single request
+                // console.log(`Last.fm API Result - "${normalizedArtist} - ${normalizedTrack}" is ${loved ? 'LOVED' : 'NOT LOVED'}`);
                 return loved;
             }
         } catch (error) {
@@ -275,6 +280,16 @@
             params.api_sig = apiSig;
             params.format = 'json';
 
+            // Log request details (without sensitive data)
+            console.log('Last.fm API Request:', {
+                method: method,
+                artist: normalizedArtist,
+                track: normalizedTrack,
+                hasApiKey: !!params.api_key,
+                hasSessionKey: !!params.sk,
+                hasSignature: !!params.api_sig
+            });
+
             const response = await fetch(`https://ws.audioscrobbler.com/2.0/`, {
                 method: 'POST',
                 headers: {
@@ -285,15 +300,27 @@
 
             if (!response.ok) {
                 console.error('Last.fm API HTTP error:', response.status, response.statusText);
+
+                // Try to get more details about the error
+                try {
+                    const errorData = await response.json();
+                    console.error('Last.fm API error details:', errorData);
+                    if (errorData.error && errorData.message) {
+                        console.error(`Last.fm Error ${errorData.error}: ${errorData.message}`);
+                    }
+                } catch (parseError) {
+                    console.error('Could not parse error response');
+                }
                 return false;
             }
 
             const data = await response.json();
             if (data.error) {
-                console.error('Last.fm API error:', data.message);
+                console.error('Last.fm API error:', data.error, data.message);
                 return false;
             }
 
+            // console.log('Last.fm API success:', data);
             const newStatus = !isLoved;
             syncAllHearts(normalizedArtist, normalizedTrack, newStatus);
             return true;
@@ -318,7 +345,7 @@
         };
 
         const handleClick = (e) => {
-            console.log('HeartIcon clicked, loading:', loading, 'disabled:', disabled);
+            // console.log('HeartIcon clicked, loading:', loading, 'disabled:', disabled);
             if (loading || disabled) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -353,7 +380,7 @@
             artist: artist,
             track: track,
             updateLoved: (newStatus) => {
-                console.log(`Syncing heart for "${artist} - ${track}" to ${newStatus ? 'LOVED' : 'UNLOVED'}`);
+                // console.log(`Syncing heart for "${artist} - ${track}" to ${newStatus ? 'LOVED' : 'UNLOVED'}`);
                 setIsLoved(newStatus);
             }
         });
@@ -364,13 +391,13 @@
             componentRef.current.track = track;
             registerHeartComponent(componentRef.current);
 
-            console.log(`LastfmLovedCell useEffect - Artist: "${artist}", Track: "${track}"`);
+            // console.log(`LastfmLovedCell useEffect - Artist: "${artist}", Track: "${track}"`);
             if (artist && track) {
                 setLoading(true);
                 setIsLoved(null); // Reset state to prevent stale data
                 setHasData(false);
                 getLastfmLovedStatus(artist, track).then(loved => {
-                    console.log(`LastfmLovedCell result for "${artist} - ${track}": ${loved}`);
+                    // console.log(`LastfmLovedCell result for "${artist} - ${track}": ${loved}`);
                     setIsLoved(loved);
                     setHasData(loved !== null);
                     setLoading(false);
@@ -389,10 +416,10 @@
         }, [artist, track]); // Re-run when artist or track changes
 
         const handleClick = async () => {
-            console.log(`Heart clicked for "${artist} - ${track}", current status: ${isLoved}, hasData: ${hasData}, loading: ${loading}`);
+            // console.log(`Heart clicked for "${artist} - ${track}", current status: ${isLoved}, hasData: ${hasData}, loading: ${loading}`);
 
             if (loading || isLoved === null || !hasData) {
-                console.log(`Click ignored for "${artist} - ${track}" - not ready`);
+                // console.log(`Click ignored for "${artist} - ${track}" - not ready`);
                 return;
             }
 
@@ -482,7 +509,7 @@
         const artistLinks = sideNavNowPlaying.querySelectorAll('.main-trackInfo-artists a');
 
         if (!trackLink || !artistLinks.length) {
-            console.log('Last.fm Loved Extension: Could not find track/artist in side nav now playing');
+            // console.log('Last.fm Loved Extension: Could not find track/artist in side nav now playing');
             return;
         }
 
@@ -490,7 +517,7 @@
         // Get the first artist (main artist)
         const artistName = artistLinks[0].textContent.trim();
 
-        console.log(`SIDE_NAV - Track: "${trackName}", Artist: "${artistName}"`);
+        // console.log(`SIDE_NAV - Track: "${trackName}", Artist: "${artistName}"`);
 
         // If we already have a heart, check if it's for the same track
         if (existingHeart) {
@@ -498,10 +525,10 @@
             const currentArtist = existingHeart.getAttribute('data-artist');
 
             if (currentTrack === trackName && currentArtist === artistName) {
-                console.log('SIDE_NAV: Heart already exists for current track');
+                // console.log('SIDE_NAV: Heart already exists for current track');
                 return; // Same track, keep existing heart
             } else {
-                console.log('SIDE_NAV: Track changed, updating heart');
+                // console.log('SIDE_NAV: Track changed, updating heart');
                 // Track changed, update the component with new props
                 ReactDOM.render(
                     React.createElement(LastfmLovedCell, {
@@ -555,10 +582,10 @@
     }
 
     function addNowPlayingHeart() {
-        console.log('addNowPlayingHeart called');
+        // console.log('addNowPlayingHeart called');
         const nowPlayingWidget = document.querySelector('[data-testid="now-playing-widget"]');
         if (!nowPlayingWidget) {
-            console.log('addNowPlayingHeart: No widget found');
+            // console.log('addNowPlayingHeart: No widget found');
             return; // No now playing widget
         }
 
@@ -569,14 +596,14 @@
         const artistLink = nowPlayingWidget.querySelector('.main-trackInfo-artists a');
 
         if (!trackLink || !artistLink) {
-            console.log('Last.fm Loved Extension: Could not find track/artist in now playing');
+            // console.log('Last.fm Loved Extension: Could not find track/artist in now playing');
             return;
         }
 
         const trackName = trackLink.textContent.trim();
         const artistName = artistLink.textContent.trim();
 
-        console.log(`NOW_PLAYING - Track: "${trackName}", Artist: "${artistName}"`);
+        // console.log(`NOW_PLAYING - Track: "${trackName}", Artist: "${artistName}"`);
 
         // If we already have a heart, check if it's for the same track
         if (existingHeart) {
@@ -584,10 +611,10 @@
             const currentArtist = existingHeart.getAttribute('data-artist');
 
             if (currentTrack === trackName && currentArtist === artistName) {
-                console.log('NOW_PLAYING: Heart already exists for current track');
+                // console.log('NOW_PLAYING: Heart already exists for current track');
                 return; // Same track, keep existing heart
             } else {
-                console.log('NOW_PLAYING: Track changed, updating heart');
+                // console.log('NOW_PLAYING: Track changed, updating heart');
                 // Track changed, update the component with new props
                 ReactDOM.render(
                     React.createElement(LastfmLovedCell, {
@@ -632,11 +659,11 @@
     }
 
     function addLovedColumn() {
-        console.log('Last.fm Loved Extension: Searching for track rows...');
+        // console.log('Last.fm Loved Extension: Searching for track rows...');
 
         // Find all tracklist views
         const tracklists = document.querySelectorAll('.main-trackList-trackList.main-trackList-indexable');
-        console.log('Last.fm Loved Extension: Found', tracklists.length, 'tracklist views');
+        // console.log('Last.fm Loved Extension: Found', tracklists.length, 'tracklist views');
 
         tracklists.forEach(tracklist => {
             // Add header if not already present
@@ -651,11 +678,11 @@
                         '[var2] 2fr [lastfm] 120px [var3] 2fr'
                     );
                     headerRow.style.gridTemplateColumns = newGridTemplate;
-                    console.log('Grid template updated:', newGridTemplate);
+                    // console.log('Grid template updated:', newGridTemplate);
                 } else if (!currentGridTemplate) {
                     // Fallback: set the full grid template if none exists
                     headerRow.style.gridTemplateColumns = '[index] 16px [first] 5fr [var1] 3fr [var2] 2fr [lastfm] 120px [var3] 2fr [last] minmax(120px, 1fr) !important';
-                    console.log('Grid template set from scratch');
+                    // console.log('Grid template set from scratch');
                 }
 
                 // Find the My Scrobbles column to insert before it
@@ -722,7 +749,7 @@
 
             // Find all track rows in this tracklist
             const trackRows = tracklist.querySelectorAll('[role="row"] .main-trackList-trackListRow');
-            console.log('Last.fm Loved Extension: Found', trackRows.length, 'track rows in tracklist');
+            // console.log('Last.fm Loved Extension: Found', trackRows.length, 'track rows in tracklist');
 
             trackRows.forEach((row, index) => {
                 if (row.querySelector('.lastfm-loved-cell')) {
@@ -747,15 +774,15 @@
                 const artistLink = row.querySelector('a[href*="/artist/"]');
 
                 if (!trackLink || !artistLink) {
-                    console.log(`Last.fm Loved Extension: Row ${index} missing track/artist info, skipping`);
+                    // console.log(`Last.fm Loved Extension: Row ${index} missing track/artist info, skipping`);
                     return;
                 }
 
                 const trackName = trackLink.textContent;
                 const artistName = artistLink.textContent;
 
-                console.log(`TRACKLIST - Track: "${trackName}", Artist: "${artistName}"`);
-                console.log(`Last.fm Loved Extension: Adding heart for ${artistName} - ${trackName}`);
+                // console.log(`TRACKLIST - Track: "${trackName}", Artist: "${artistName}"`);
+                // console.log(`Last.fm Loved Extension: Adding heart for ${artistName} - ${trackName}`);
 
                 // Find the My Scrobbles column to insert before it
                 const myScrobblesCell = row.querySelector('.sort-play-column');
@@ -793,7 +820,7 @@
                         durationCell.setAttribute('aria-colindex', '7');
                     }
 
-                    console.log(`Last.fm Loved Extension: Heart added for row ${index}`);
+                    // console.log(`Last.fm Loved Extension: Heart added for row ${index}`);
                 }
             });
         });
