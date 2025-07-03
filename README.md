@@ -6,6 +6,8 @@
 
 [A Spicetify](https://github.com/spicetify) extension that adds a Last.fm loved tracks column to Spotify playlists and artist views with clickable heart icons.
 
+![image](https://github.com/user-attachments/assets/f8e4182c-4f5f-47de-b280-5aa0327cfe3e)
+
 ## Features
 
 - **Heart Icon Column**: Adds a clickable heart column to playlist and artist views
