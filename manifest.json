@@ -1,0 +1,15 @@
+{
+  "name": "LastFM Loved Tracks",
+  "description": "Add Last.fm loved tracks column to Spotify playlists and artist views with clickable heart icons",
+  "preview": "preview.png",
+  "main": "lastfmLoved.js",
+  "readme": "README.md",
+  "authors": [
+    {
+      "name": "rolle",
+      "url": "https://github.com/ronilaukkarinen"
+    }
+  ],
+  "tags": ["lastfm", "loved", "playlist", "columns"],
+  "version": "1.0.0"
+}
