@@ -1,13 +1,10 @@
 # ❤️ LastFM Loved Tracks
 
-[![GitHub](https://img.shields.io/github/license/ronilaukkarinen/spicetify-lastfm-loved?style=for-the-badge)](LICENSE)
 [![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 [![Spicetify](https://img.shields.io/badge/Spicetify-1ED760?style=for-the-badge&logo=spotify&logoColor=white)](https://spicetify.app/)
 [![Last.fm](https://img.shields.io/badge/Last.fm-D51007?style=for-the-badge&logo=last.fm&logoColor=white)](https://last.fm/)
 
 A Spicetify extension that adds a Last.fm loved tracks column to Spotify playlists and artist views with clickable heart icons.
-
-![LastFM Loved Tracks Demo](preview.png)
 
 ## Features
 
