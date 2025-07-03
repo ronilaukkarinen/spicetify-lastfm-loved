@@ -276,6 +276,7 @@
             const sortedKeys = Object.keys(params).sort();
             let sigString = '';
             sortedKeys.forEach(key => {
+                // Don't URL encode in signature string - Last.fm expects raw values
                 sigString += key + params[key];
             });
             sigString += lastfmSharedSecret;
@@ -287,11 +288,21 @@
                 method: method,
                 sortedKeys: sortedKeys,
                 sigStringLength: sigString.length,
+                // Show first 50 chars of signature string for debugging (before adding secret)
+                sigStringPreview: sigString.substring(0, sigString.length - lastfmSharedSecret.length).substring(0, 50) + '...',
+                artistByteLength: new TextEncoder().encode(apiArtist).length,
+                trackByteLength: new TextEncoder().encode(apiTrack).length,
                 // Don't log the actual signature string as it contains secrets
             });
 
-            // Generate MD5 signature
-            const apiSig = await md5(sigString);
+            // Generate MD5 signature with proper UTF-8 encoding
+            const utf8SigString = unescape(encodeURIComponent(sigString));
+            console.log('UTF-8 Encoding Debug:', {
+                originalLength: sigString.length,
+                utf8Length: utf8SigString.length,
+                lengthDifference: utf8SigString.length - sigString.length
+            });
+            const apiSig = await md5(utf8SigString);
             params.api_sig = apiSig;
             params.format = 'json';
 
