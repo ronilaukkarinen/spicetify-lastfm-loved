@@ -1,6 +1,7 @@
 ### 1.1.0: 2025-07-03
 
 * Add heart inside the now playing widget
+* Add heart icon to side nav
 
 ### 1.0.0: 2025-07-02
 

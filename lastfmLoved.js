@@ -38,6 +38,8 @@
     async function getLastfmLovedStatus(artist, track) {
         if (!lastfmApiKey || !lastfmUsername) return null;
 
+        console.log(`Last.fm API Request - Artist: "${artist}", Track: "${track}"`);
+
         try {
             const response = await fetch(
                 `https://ws.audioscrobbler.com/2.0/?method=track.getInfo&api_key=${lastfmApiKey}&artist=${encodeURIComponent(artist)}&track=${encodeURIComponent(track)}&username=${lastfmUsername}&format=json`
@@ -45,7 +47,9 @@
             const data = await response.json();
 
             if (data.track && data.track.userloved) {
-                return data.track.userloved === '1';
+                const loved = data.track.userloved === '1';
+                console.log(`Last.fm API Result - "${artist} - ${track}" is ${loved ? 'LOVED' : 'NOT LOVED'}`);
+                return loved;
             }
         } catch (error) {
             console.error('Error fetching Last.fm loved status:', error);
@@ -299,9 +303,13 @@
         const [hasData, setHasData] = useState(false);
 
         useEffect(() => {
+            console.log(`LastfmLovedCell useEffect - Artist: "${artist}", Track: "${track}"`);
             if (artist && track) {
                 setLoading(true);
+                setIsLoved(null); // Reset state to prevent stale data
+                setHasData(false);
                 getLastfmLovedStatus(artist, track).then(loved => {
+                    console.log(`LastfmLovedCell result for "${artist} - ${track}": ${loved}`);
                     setIsLoved(loved);
                     setHasData(loved !== null);
                     setLoading(false);
@@ -312,10 +320,15 @@
         const handleClick = async () => {
             if (loading || isLoved === null || !hasData) return;
 
+            console.log(`Toggling loved status for "${artist} - ${track}" from ${isLoved} to ${!isLoved}`);
             setLoading(true);
             const success = await toggleLastfmLoved(artist, track, isLoved);
             if (success) {
-                setIsLoved(!isLoved);
+                const newStatus = !isLoved;
+                setIsLoved(newStatus);
+                console.log(`Successfully toggled "${artist} - ${track}" to ${newStatus ? 'LOVED' : 'UNLOVED'}`);
+            } else {
+                console.log(`Failed to toggle loved status for "${artist} - ${track}"`);
             }
             setLoading(false);
         };
@@ -400,6 +413,7 @@
         // Get the first artist (main artist)
         const artistName = artistLinks[0].textContent;
 
+        console.log(`SIDE_NAV - Track: "${trackName}", Artist: "${artistName}"`);
         console.log(`Last.fm Loved Extension: Adding heart for side nav now playing: ${artistName} - ${trackName}`);
 
         // Find the button area to insert our heart
@@ -441,8 +455,10 @@
     }
 
     function addNowPlayingHeart() {
+        console.log('addNowPlayingHeart called');
         const nowPlayingWidget = document.querySelector('[data-testid="now-playing-widget"]');
         if (!nowPlayingWidget || nowPlayingWidget.querySelector('.lastfm-loved-nowplaying')) {
+            console.log('addNowPlayingHeart: No widget or already has heart');
             return; // No now playing widget or already has our heart
         }
 
@@ -458,6 +474,7 @@
         const trackName = trackLink.textContent;
         const artistName = artistLink.textContent;
 
+        console.log(`NOW_PLAYING - Track: "${trackName}", Artist: "${artistName}"`);
         console.log(`Last.fm Loved Extension: Adding heart for now playing: ${artistName} - ${trackName}`);
 
         // Find the button area to insert our heart
@@ -612,6 +629,7 @@
                 const trackName = trackLink.textContent;
                 const artistName = artistLink.textContent;
 
+                console.log(`TRACKLIST - Track: "${trackName}", Artist: "${artistName}"`);
                 console.log(`Last.fm Loved Extension: Adding heart for ${artistName} - ${trackName}`);
 
                 // Find the My Scrobbles column to insert before it
