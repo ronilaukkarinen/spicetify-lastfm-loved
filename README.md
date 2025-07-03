@@ -1,4 +1,4 @@
-# ❤️ LastFM Loved Tracks
+# ❤️ Last.fm loved tracks column for Spotify
 
 [![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 [![Spicetify](https://img.shields.io/badge/Spicetify-1ED760?style=for-the-badge&logo=spotify&logoColor=white)](https://spicetify.app/)
