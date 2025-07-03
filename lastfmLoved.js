@@ -489,9 +489,7 @@
             WebkitBoxPack: 'center',
             transitionProperty: 'color, transform',
             opacity: hasData ? 1 : 0.3,
-            transition: 'opacity 0.3s ease',
-            position: 'relative',
-            top: '1px'
+            transition: 'opacity 0.3s ease'
         };
 
         if (loading) {
@@ -702,30 +700,41 @@
             // Add header if not already present
             const headerRow = tracklist.querySelector('.main-trackList-trackListHeaderRow');
             if (headerRow && !headerRow.querySelector('.lastfm-loved-header')) {
-                // Modify the grid template to add space for our column after Date added
+                // Modify the grid template to add space for our column
                 const currentGridTemplate = headerRow.style.gridTemplateColumns;
                 if (currentGridTemplate && !currentGridTemplate.includes('lastfm')) {
-                    // Insert our column between [var2] (Date added) and [var3] (My Scrobbles)
-                    const newGridTemplate = currentGridTemplate.replace(
-                        '[var2] 2fr [var3] 2fr',
-                        '[var2] 2fr [lastfm] 120px [var3] 2fr'
-                    );
-                    headerRow.style.gridTemplateColumns = newGridTemplate;
+                    // Only modify playlist views for now
+                    // Album views are skipped to prevent breaking the layout
+                    const isAlbumView = headerRow.querySelectorAll('[role="columnheader"]').length === 4;
+                    
+                    if (!isAlbumView) {
+                        // Playlist view: Insert our column between [var2] (Date added) and [var3] (My Scrobbles)
+                        const newGridTemplate = currentGridTemplate.replace(
+                            '[var2] 2fr [var3] 2fr',
+                            '[var2] 2fr [lastfm] 120px [var3] 2fr'
+                        );
+                        headerRow.style.gridTemplateColumns = newGridTemplate;
+                    }
                     // console.log('Grid template updated:', newGridTemplate);
                 } else if (!currentGridTemplate) {
                     // Fallback: set the full grid template if none exists
-                    headerRow.style.gridTemplateColumns = '[index] 16px [first] 5fr [var1] 3fr [var2] 2fr [lastfm] 120px [var3] 2fr [last] minmax(120px, 1fr) !important';
+                    headerRow.style.gridTemplateColumns = '[index] 16px [first] 5fr [var1] 3fr [lastfm] 120px [last] minmax(120px, 1fr) !important';
                     // console.log('Grid template set from scratch');
                 }
 
-                // Find the My Scrobbles column to insert before it
-                const myScrobblesColumn = headerRow.querySelector('.sort-play-column');
+                // Find where to insert the header - only for playlist views
+                const isAlbumView = headerRow.querySelectorAll('[role="columnheader"]').length === 4;
+                
+                if (!isAlbumView) {
+                    // Playlist view only: Insert before My Scrobbles column
+                    const insertTarget = headerRow.querySelector('.sort-play-column');
+                    const newAriaColindex = 5;
 
-                if (myScrobblesColumn) {
+                    if (insertTarget) {
                     const headerCell = document.createElement('div');
                     headerCell.className = 'lastfm-loved-header main-trackList-rowSectionVariable';
                     headerCell.setAttribute('role', 'columnheader');
-                    headerCell.setAttribute('aria-colindex', '5');
+                    headerCell.setAttribute('aria-colindex', newAriaColindex.toString());
                     headerCell.setAttribute('aria-sort', 'none');
                     headerCell.setAttribute('tabindex', '-1');
                     headerCell.style.cssText = `
@@ -766,17 +775,18 @@
                     divider.className = 'I7SbihsVaE4CAUqLMa45';
                     headerCell.appendChild(divider);
 
-                    // Insert before the My Scrobbles column and update aria-colindex values
-                    headerRow.insertBefore(headerCell, myScrobblesColumn);
-                    myScrobblesColumn.setAttribute('aria-colindex', '6');
+                    // Insert before the target column and update aria-colindex values
+                    headerRow.insertBefore(headerCell, insertTarget);
 
-                    // Update Duration column aria-colindex
+                    // Playlist view: Update My Scrobbles and Duration columns
+                    insertTarget.setAttribute('aria-colindex', '6');
                     const durationColumn = headerRow.querySelector('.main-trackList-rowSectionEnd');
                     if (durationColumn) {
                         durationColumn.setAttribute('aria-colindex', '7');
                     }
 
                     console.log('Last.fm Loved Extension: Header added');
+                    }
                 }
             }
 
@@ -797,17 +807,29 @@
                     return; // Already has our heart
                 }
 
-                // Modify the grid template for this row to match header
+                // Modify the grid template for this row to match header (playlist views only)
                 const currentGridTemplate = row.style.gridTemplateColumns;
                 if (currentGridTemplate && !currentGridTemplate.includes('lastfm')) {
-                    const newGridTemplate = currentGridTemplate.replace(
-                        '[var2] 2fr [var3] 2fr',
-                        '[var2] 2fr [lastfm] 120px [var3] 2fr'
-                    );
-                    row.style.gridTemplateColumns = newGridTemplate;
+                    // Check if this is an album view - skip album views for now
+                    const headerRow = tracklist.querySelector('.main-trackList-trackListHeaderRow');
+                    const isAlbumView = headerRow && headerRow.querySelectorAll('[role="columnheader"]').length === 4;
+
+                    if (!isAlbumView) {
+                        // Playlist view only: Insert between Date added and My Scrobbles
+                        const newGridTemplate = currentGridTemplate.replace(
+                            '[var2] 2fr [var3] 2fr',
+                            '[var2] 2fr [lastfm] 120px [var3] 2fr'
+                        );
+                        row.style.gridTemplateColumns = newGridTemplate;
+                    }
                 } else if (!currentGridTemplate) {
-                    // Fallback: set the full grid template if none exists
-                    row.style.gridTemplateColumns = '[index] 16px [first] 5fr [var1] 3fr [var2] 2fr [lastfm] 120px [var3] 2fr [last] minmax(120px, 1fr) !important';
+                    // Fallback: set the full grid template if none exists (playlist views only)
+                    const headerRow = tracklist.querySelector('.main-trackList-trackListHeaderRow');
+                    const isAlbumView = headerRow && headerRow.querySelectorAll('[role="columnheader"]').length === 4;
+                    
+                    if (!isAlbumView) {
+                        row.style.gridTemplateColumns = '[index] 16px [first] 5fr [var1] 3fr [var2] 2fr [lastfm] 120px [var3] 2fr [last] minmax(120px, 1fr) !important';
+                    }
                 }
 
                 // Skip rows that don't have proper track structure
@@ -947,15 +969,56 @@
                 } else {
                     // Original logic for regular track lists with headers
 
-                    // Find the My Scrobbles column to insert before it
-                    const myScrobblesCell = row.querySelector('.sort-play-column');
+                    // Check if this is an album view or playlist view
+                    const headerRow = tracklist.querySelector('.main-trackList-trackListHeaderRow');
+                    const isAlbumView = headerRow && headerRow.querySelectorAll('[role="columnheader"]').length === 4;
 
-                    if (myScrobblesCell) {
+                    if (isAlbumView) {
+                        // Album view: Add heart like Popular section (no grid modification)
+                        const endSection = row.querySelector('.main-trackList-rowSectionEnd');
+                        const addToLikedButton = endSection?.querySelector('.main-trackList-curationButton');
+                        
+                        if (endSection && addToLikedButton) {
+                            // Create heart container for Album view
+                            const heartContainer = document.createElement('div');
+                            heartContainer.className = 'lastfm-loved-cell';
+                            heartContainer.style.cssText = `
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                min-width: 100px;
+                                margin-right: 12px;
+                                margin-left: 4px;
+                            `;
+
+                            // Render React component
+                            ReactDOM.render(
+                                React.createElement(LastfmLovedCell, {
+                                    artist: artistName,
+                                    track: trackName
+                                }),
+                                heartContainer
+                            );
+
+                            // Insert before the add to liked songs button
+                            endSection.insertBefore(heartContainer, addToLikedButton);
+                            
+                            // Mark the row as processed to prevent future processing
+                            row.setAttribute('data-lastfm-heart-added', 'true');
+                            
+                            console.log(`Last.fm Loved Extension: Heart added to Album view for row ${index}`);
+                        }
+                    } else {
+                        // Playlist view only: Insert before My Scrobbles column
+                        const insertTarget = row.querySelector('.sort-play-column');
+                        const newAriaColindex = 5;
+
+                        if (insertTarget) {
                         // Create heart container as a proper column cell
                         const heartContainer = document.createElement('div');
                         heartContainer.className = 'lastfm-loved-cell main-trackList-rowSectionVariable';
                         heartContainer.setAttribute('role', 'gridcell');
-                        heartContainer.setAttribute('aria-colindex', '5');
+                        heartContainer.setAttribute('aria-colindex', newAriaColindex.toString());
                         heartContainer.style.cssText = `
                             grid-area: auto / lastfm;
                             display: flex;
@@ -973,17 +1036,21 @@
                             heartContainer
                         );
 
-                        // Insert before the My Scrobbles column and update aria-colindex values
-                        row.insertBefore(heartContainer, myScrobblesCell);
-                        myScrobblesCell.setAttribute('aria-colindex', '6');
+                        // Insert before the target column and update aria-colindex values
+                        row.insertBefore(heartContainer, insertTarget);
 
-                        // Update Duration column aria-colindex
+                        // Playlist view: Update My Scrobbles and Duration columns
+                        insertTarget.setAttribute('aria-colindex', '6');
                         const durationCell = row.querySelector('.main-trackList-rowSectionEnd');
                         if (durationCell) {
                             durationCell.setAttribute('aria-colindex', '7');
                         }
 
+                        // Mark the row as processed to prevent future processing
+                        row.setAttribute('data-lastfm-heart-added', 'true');
+
                         // console.log(`Last.fm Loved Extension: Heart added for row ${index}`);
+                        }
                     }
                 }
             });
