@@ -65,7 +65,9 @@
     async function getLastfmLovedStatus(artist, track) {
         if (!lastfmApiKey || !lastfmUsername) return null;
 
-        // Normalize names for consistency
+        // Use original casing for API calls, normalize only for logging/comparison
+        const apiArtist = artist.trim();
+        const apiTrack = track.trim();
         const normalizedArtist = artist.toLowerCase().trim();
         const normalizedTrack = track.toLowerCase().trim();
 
@@ -73,7 +75,7 @@
 
         try {
             const response = await fetch(
-                `https://ws.audioscrobbler.com/2.0/?method=track.getInfo&api_key=${lastfmApiKey}&artist=${encodeURIComponent(normalizedArtist)}&track=${encodeURIComponent(normalizedTrack)}&username=${lastfmUsername}&format=json`
+                `https://ws.audioscrobbler.com/2.0/?method=track.getInfo&api_key=${lastfmApiKey}&artist=${encodeURIComponent(apiArtist)}&track=${encodeURIComponent(apiTrack)}&username=${lastfmUsername}&format=json`
             );
             const data = await response.json();
 
@@ -251,20 +253,23 @@
             return false;
         }
 
-        // Normalize names for consistency
+        // Use original casing for API calls (Last.fm signature is case-sensitive)
+        // But normalize for internal comparison and sync
+        const apiArtist = artist.trim();
+        const apiTrack = track.trim();
         const normalizedArtist = artist.toLowerCase().trim();
         const normalizedTrack = track.toLowerCase().trim();
 
         const method = isLoved ? 'track.unlove' : 'track.love';
 
         try {
-            // Create parameters for API signature
+            // Create parameters for API signature - MUST use original casing
             const params = {
                 api_key: lastfmApiKey,
-                artist: normalizedArtist,
+                artist: apiArtist,
                 method: method,
                 sk: lastfmSessionKey,
-                track: normalizedTrack
+                track: apiTrack
             };
 
             // Sort parameters alphabetically and create signature string
@@ -275,6 +280,16 @@
             });
             sigString += lastfmSharedSecret;
 
+            // Add debugging for signature generation
+            console.log('Last.fm Signature Debug:', {
+                artist: apiArtist,
+                track: apiTrack,
+                method: method,
+                sortedKeys: sortedKeys,
+                sigStringLength: sigString.length,
+                // Don't log the actual signature string as it contains secrets
+            });
+
             // Generate MD5 signature
             const apiSig = await md5(sigString);
             params.api_sig = apiSig;
@@ -283,8 +298,8 @@
             // Log request details (without sensitive data)
             console.log('Last.fm API Request:', {
                 method: method,
-                artist: normalizedArtist,
-                track: normalizedTrack,
+                artist: apiArtist,
+                track: apiTrack,
                 hasApiKey: !!params.api_key,
                 hasSessionKey: !!params.sk,
                 hasSignature: !!params.api_sig
@@ -322,6 +337,7 @@
 
             // console.log('Last.fm API success:', data);
             const newStatus = !isLoved;
+            // Use normalized names for internal sync (case-insensitive matching)
             syncAllHearts(normalizedArtist, normalizedTrack, newStatus);
             return true;
         } catch (error) {
