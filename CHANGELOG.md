@@ -1,3 +1,7 @@
+### 1.1.1: 2025-07-03
+
+* Add loved feature to Popular section in artist views
+
 ### 1.1.0: 2025-07-03
 
 * Add heart inside the now playing widget
