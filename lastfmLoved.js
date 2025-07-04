@@ -706,7 +706,7 @@
                     // Only modify playlist views for now
                     // Album views are skipped to prevent breaking the layout
                     const isAlbumView = headerRow.querySelectorAll('[role="columnheader"]').length === 4;
-                    
+
                     if (!isAlbumView) {
                         // Playlist view: Insert our column between [var2] (Date added) and [var3] (My Scrobbles)
                         const newGridTemplate = currentGridTemplate.replace(
@@ -724,7 +724,7 @@
 
                 // Find where to insert the header - only for playlist views
                 const isAlbumView = headerRow.querySelectorAll('[role="columnheader"]').length === 4;
-                
+
                 if (!isAlbumView) {
                     // Playlist view only: Insert before My Scrobbles column
                     const insertTarget = headerRow.querySelector('.sort-play-column');
@@ -826,7 +826,7 @@
                     // Fallback: set the full grid template if none exists (playlist views only)
                     const headerRow = tracklist.querySelector('.main-trackList-trackListHeaderRow');
                     const isAlbumView = headerRow && headerRow.querySelectorAll('[role="columnheader"]').length === 4;
-                    
+
                     if (!isAlbumView) {
                         row.style.gridTemplateColumns = '[index] 16px [first] 5fr [var1] 3fr [var2] 2fr [lastfm] 120px [var3] 2fr [last] minmax(120px, 1fr) !important';
                     }
@@ -977,7 +977,7 @@
                         // Album view: Add heart like Popular section (no grid modification)
                         const endSection = row.querySelector('.main-trackList-rowSectionEnd');
                         const addToLikedButton = endSection?.querySelector('.main-trackList-curationButton');
-                        
+
                         if (endSection && addToLikedButton) {
                             // Create heart container for Album view
                             const heartContainer = document.createElement('div');
@@ -986,9 +986,8 @@
                                 display: flex;
                                 align-items: center;
                                 justify-content: center;
-                                min-width: 100px;
-                                margin-right: 12px;
-                                margin-left: 4px;
+                                margin-right: 15px;
+                                margin-left: 15px;
                             `;
 
                             // Render React component
@@ -1002,10 +1001,10 @@
 
                             // Insert before the add to liked songs button
                             endSection.insertBefore(heartContainer, addToLikedButton);
-                            
+
                             // Mark the row as processed to prevent future processing
                             row.setAttribute('data-lastfm-heart-added', 'true');
-                            
+
                             console.log(`Last.fm Loved Extension: Heart added to Album view for row ${index}`);
                         }
                     } else {
