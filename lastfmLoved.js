@@ -969,8 +969,8 @@
                             display: flex;
                             align-items: center;
                             justify-content: center;
-                            margin-right: 15px;
-                            margin-left: 15px;
+                            margin-right: 20px;
+                            margin-left: 0;
                         `;
 
                         // Render React component
@@ -1004,8 +1004,8 @@
                                 display: flex;
                                 align-items: center;
                                 justify-content: center;
-                                margin-left: 15px;
-                                margin-right: 15px;
+                                margin-left: 0;
+                                margin-right: 20px;
                             `;
 
                             // Render React component
@@ -1046,8 +1046,8 @@
                                 display: flex;
                                 align-items: center;
                                 justify-content: center;
-                                margin-right: 15px;
-                                margin-left: 15px;
+                                margin-right: 20px;
+                                margin-left: 0;
                             `;
 
                             // Render React component
