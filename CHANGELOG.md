@@ -1,3 +1,10 @@
+### 1.2.0: 2025-07-04
+
+* Fix column positioning to work without sort-play extension dependency
+* Improve CSS grid layout for proper 6-column playlist layout
+* Fix Last.fm column appearing in correct position after Date added column
+* Update aria-colcount attributes for better accessibility
+
 ### 1.1.1: 2025-07-03
 
 * Add loved feature to Popular section in artist views

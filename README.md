@@ -2,7 +2,7 @@
 
 [![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 [![Spotify](https://img.shields.io/badge/Spotify-1ED760?style=for-the-badge&logo=spotify&logoColor=white)](https://spicetify.app/)
-[![Last.fm](https://img.shields.io/badge/Last.fm-D51007?style=for-the-badge&logo=last.fm&logoColor=white)](https://last.fm/) ![Version](https://img.shields.io/badge/version-1.1.1-blue?style=for-the-badge)
+[![Last.fm](https://img.shields.io/badge/Last.fm-D51007?style=for-the-badge&logo=last.fm&logoColor=white)](https://last.fm/) ![Version](https://img.shields.io/badge/version-1.2.0-blue?style=for-the-badge)
 
 [A Spicetify](https://github.com/spicetify) extension that adds a Last.fm loved tracks column to Spotify playlists and artist views with clickable heart icons.
 

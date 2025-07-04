@@ -282,39 +282,39 @@
             sigString += lastfmSharedSecret;
 
             // Add debugging for signature generation
-            console.log('Last.fm Signature Debug:', {
-                artist: apiArtist,
-                track: apiTrack,
-                method: method,
-                sortedKeys: sortedKeys,
-                sigStringLength: sigString.length,
-                // Show first 50 chars of signature string for debugging (before adding secret)
-                sigStringPreview: sigString.substring(0, sigString.length - lastfmSharedSecret.length).substring(0, 50) + '...',
-                artistByteLength: new TextEncoder().encode(apiArtist).length,
-                trackByteLength: new TextEncoder().encode(apiTrack).length,
-                // Don't log the actual signature string as it contains secrets
-            });
+            // console.log('Last.fm Signature Debug:', {
+            //     artist: apiArtist,
+            //     track: apiTrack,
+            //     method: method,
+            //     sortedKeys: sortedKeys,
+            //     sigStringLength: sigString.length,
+            //     // Show first 50 chars of signature string for debugging (before adding secret)
+            //     sigStringPreview: sigString.substring(0, sigString.length - lastfmSharedSecret.length).substring(0, 50) + '...',
+            //     artistByteLength: new TextEncoder().encode(apiArtist).length,
+            //     trackByteLength: new TextEncoder().encode(apiTrack).length,
+            //     // Don't log the actual signature string as it contains secrets
+            // });
 
             // Generate MD5 signature with proper UTF-8 encoding
             const utf8SigString = unescape(encodeURIComponent(sigString));
-            console.log('UTF-8 Encoding Debug:', {
-                originalLength: sigString.length,
-                utf8Length: utf8SigString.length,
-                lengthDifference: utf8SigString.length - sigString.length
-            });
+            // console.log('UTF-8 Encoding Debug:', {
+            //     originalLength: sigString.length,
+            //     utf8Length: utf8SigString.length,
+            //     lengthDifference: utf8SigString.length - sigString.length
+            // });
             const apiSig = await md5(utf8SigString);
             params.api_sig = apiSig;
             params.format = 'json';
 
             // Log request details (without sensitive data)
-            console.log('Last.fm API Request:', {
-                method: method,
-                artist: apiArtist,
-                track: apiTrack,
-                hasApiKey: !!params.api_key,
-                hasSessionKey: !!params.sk,
-                hasSignature: !!params.api_sig
-            });
+            // console.log('Last.fm API Request:', {
+            //     method: method,
+            //     artist: apiArtist,
+            //     track: apiTrack,
+            //     hasApiKey: !!params.api_key,
+            //     hasSessionKey: !!params.sk,
+            //     hasSignature: !!params.api_sig
+            // });
 
             const response = await fetch(`https://ws.audioscrobbler.com/2.0/`, {
                 method: 'POST',
@@ -450,14 +450,14 @@
                 return;
             }
 
-            console.log(`Toggling loved status for "${artist} - ${track}" from ${isLoved} to ${!isLoved}`);
+            // console.log(`Toggling loved status for "${artist} - ${track}" from ${isLoved} to ${!isLoved}`);
             setLoading(true);
             const success = await toggleLastfmLoved(artist, track, isLoved);
             if (success) {
-                console.log(`Successfully toggled "${artist} - ${track}" - sync will handle state update`);
+                // console.log(`Successfully toggled "${artist} - ${track}" - sync will handle state update`);
                 // Don't update local state - let global sync handle it
             } else {
-                console.log(`Failed to toggle loved status for "${artist} - ${track}"`);
+                // console.log(`Failed to toggle loved status for "${artist} - ${track}"`);
             }
             setLoading(false);
         };
@@ -569,7 +569,7 @@
             }
         }
 
-        console.log(`Last.fm Loved Extension: Adding heart for side nav now playing: ${artistName} - ${trackName}`);
+        // console.log(`Last.fm Loved Extension: Adding heart for side nav now playing: ${artistName} - ${trackName}`);
 
         // Find the button area to insert our heart
         const buttonArea = sideNavNowPlaying.querySelector('.O5NOY8Xw4NH0IhBZu8tm');
@@ -602,7 +602,7 @@
 
             // Insert before the existing button area
             buttonArea.parentNode.insertBefore(heartButton, buttonArea);
-            console.log('Last.fm Loved Extension: Heart added to side nav');
+            // console.log('Last.fm Loved Extension: Heart added to side nav');
         }
     }
 
@@ -655,7 +655,7 @@
             }
         }
 
-        console.log(`Last.fm Loved Extension: Adding heart for now playing: ${artistName} - ${trackName}`);
+        // console.log(`Last.fm Loved Extension: Adding heart for now playing: ${artistName} - ${trackName}`);
 
         // Find the button area to insert our heart
         const buttonArea = nowPlayingWidget.querySelector('.ZbFkATBbLkWh2SHMXDt6');
@@ -679,7 +679,7 @@
 
             // Insert before the existing buttons
             buttonArea.insertBefore(heartContainer, buttonArea.firstChild);
-            console.log('Last.fm Loved Extension: Heart added to now playing');
+            // console.log('Last.fm Loved Extension: Heart added to now playing');
         }
     }
 
@@ -700,45 +700,45 @@
             // Add header if not already present
             const headerRow = tracklist.querySelector('.main-trackList-trackListHeaderRow');
             if (headerRow && !headerRow.querySelector('.lastfm-loved-header')) {
+                // Detect if sort-play extension is present
+                const hasSortPlayExtension = headerRow.querySelector('.sort-play-column') !== null;
+                
+                // Update aria-colcount based on presence of sort-play extension
+                const tracklistContainer = tracklist.closest('.main-trackList-trackList');
+                if (tracklistContainer) {
+                    const newColCount = hasSortPlayExtension ? '7' : '6';
+                    tracklistContainer.setAttribute('aria-colcount', newColCount);
+                }
                 // Modify the grid template to add space for our column
                 const currentGridTemplate = headerRow.style.gridTemplateColumns;
-                if (currentGridTemplate && !currentGridTemplate.includes('lastfm')) {
-                    // Only modify playlist views for now
-                    // Album views are skipped to prevent breaking the layout
-                    const isAlbumView = headerRow.querySelectorAll('[role="columnheader"]').length === 4;
+                const isAlbumView = headerRow.querySelectorAll('[role="columnheader"]').length === 4;
 
-                    if (!isAlbumView) {
-                        // Playlist view: Insert our column between [var2] (Date added) and [var3] (My Scrobbles)
-                        const newGridTemplate = currentGridTemplate.replace(
-                            '[var2] 2fr [var3] 2fr',
-                            '[var2] 2fr [lastfm] 120px [var3] 2fr'
-                        );
-                        headerRow.style.gridTemplateColumns = newGridTemplate;
+                if (!isAlbumView && (!currentGridTemplate || !currentGridTemplate.includes('120px') || currentGridTemplate.split(' ').length < 14)) {
+                    // Always set the complete grid template for playlist views
+                    if (hasSortPlayExtension) {
+                        // 7-column layout with sort-play - simple equal columns approach
+                        headerRow.style.gridTemplateColumns = '16px 5fr 3fr 2fr 120px 2fr minmax(120px, 1fr) !important';
+                    } else {
+                        // 6-column layout without sort-play
+                        headerRow.style.gridTemplateColumns = '16px 5fr 3fr 2fr 120px minmax(120px, 1fr) !important';
                     }
-                    // console.log('Grid template updated:', newGridTemplate);
-                } else if (!currentGridTemplate) {
-                    // Fallback: set the full grid template if none exists
-                    headerRow.style.gridTemplateColumns = '[index] 16px [first] 5fr [var1] 3fr [lastfm] 120px [last] minmax(120px, 1fr) !important';
-                    // console.log('Grid template set from scratch');
                 }
 
                 // Find where to insert the header - only for playlist views
-                const isAlbumView = headerRow.querySelectorAll('[role="columnheader"]').length === 4;
 
                 if (!isAlbumView) {
-                    // Playlist view only: Insert before My Scrobbles column
-                    const insertTarget = headerRow.querySelector('.sort-play-column');
-                    const newAriaColindex = 5;
-
-                    if (insertTarget) {
+                    // Playlist view only: Choose insertion method based on sort-play presence
+                    if (hasSortPlayExtension) {
+                        // Use the original method: insert before sort-play column
+                        const insertTarget = headerRow.querySelector('.sort-play-column');
+                        if (insertTarget) {
                     const headerCell = document.createElement('div');
                     headerCell.className = 'lastfm-loved-header main-trackList-rowSectionVariable';
                     headerCell.setAttribute('role', 'columnheader');
-                    headerCell.setAttribute('aria-colindex', newAriaColindex.toString());
+                    headerCell.setAttribute('aria-colindex', '5');
                     headerCell.setAttribute('aria-sort', 'none');
                     headerCell.setAttribute('tabindex', '-1');
                     headerCell.style.cssText = `
-                        grid-area: auto / lastfm;
                         display: flex;
                         justify-content: center;
                         align-items: center;
@@ -775,28 +775,96 @@
                     divider.className = 'I7SbihsVaE4CAUqLMa45';
                     headerCell.appendChild(divider);
 
-                    // Insert before the target column and update aria-colindex values
-                    headerRow.insertBefore(headerCell, insertTarget);
+                            // Insert before sort-play column
+                            headerRow.insertBefore(headerCell, insertTarget);
 
-                    // Playlist view: Update My Scrobbles and Duration columns
-                    insertTarget.setAttribute('aria-colindex', '6');
-                    const durationColumn = headerRow.querySelector('.main-trackList-rowSectionEnd');
-                    if (durationColumn) {
-                        durationColumn.setAttribute('aria-colindex', '7');
+                            // Update aria-colindex for sort-play and duration columns
+                            insertTarget.setAttribute('aria-colindex', '6');
+                            const durationColumn = headerRow.querySelector('.main-trackList-rowSectionEnd');
+                            if (durationColumn) {
+                                durationColumn.setAttribute('aria-colindex', '7');
+                            }
+                        }
+                    } else {
+                        // Use the new method: insert after Date added column
+                        let dateAddedColumn = null;
+                        const columns = headerRow.querySelectorAll('[role="columnheader"]');
+                        
+                        // Find Date added column
+                        for (const column of columns) {
+                            if (column.getAttribute('aria-colindex') === '4') {
+                                dateAddedColumn = column;
+                                break;
+                            }
+                        }
+
+                        if (dateAddedColumn) {
+                            // Create header cell for this method too
+                            const headerCell = document.createElement('div');
+                            headerCell.className = 'lastfm-loved-header main-trackList-rowSectionVariable';
+                            headerCell.setAttribute('role', 'columnheader');
+                            headerCell.setAttribute('aria-colindex', '5');
+                            headerCell.setAttribute('aria-sort', 'none');
+                            headerCell.setAttribute('tabindex', '-1');
+                            headerCell.style.cssText = `
+                                display: flex;
+                                justify-content: center;
+                                align-items: center;
+                            `;
+
+                            // Match the structure of other headers exactly
+                            const headerWrapper = document.createElement('div');
+                            const headerButton = document.createElement('button');
+                            headerButton.className = 'main-trackList-column main-trackList-sortable';
+                            headerButton.setAttribute('tabindex', '-1');
+                            headerButton.style.cssText = `
+                                background: none;
+                                border: none;
+                                color: inherit;
+                                cursor: default;
+                                padding: 0;
+                                width: 100%;
+                                display: flex;
+                                justify-content: center;
+                                align-items: center;
+                            `;
+
+                            const headerSpan = document.createElement('span');
+                            headerSpan.className = 'e-9890-text encore-text-body-small standalone-ellipsis-one-line';
+                            headerSpan.setAttribute('data-encore-id', 'text');
+                            headerSpan.textContent = 'Last.fm loved';
+
+                            headerButton.appendChild(headerSpan);
+                            headerWrapper.appendChild(headerButton);
+                            headerCell.appendChild(headerWrapper);
+
+                            // Add the divider element like other headers
+                            const divider = document.createElement('div');
+                            divider.className = 'I7SbihsVaE4CAUqLMa45';
+                            headerCell.appendChild(divider);
+
+                            // Insert directly after Date added column
+                            dateAddedColumn.insertAdjacentElement('afterend', headerCell);
+
+                            // Update aria-colindex for Duration column (now becomes column 6)
+                            const durationColumn = headerRow.querySelector('.main-trackList-rowSectionEnd');
+                            if (durationColumn) {
+                                durationColumn.setAttribute('aria-colindex', '6');
+                            }
+                        }
                     }
 
-                    console.log('Last.fm Loved Extension: Header added');
-                    }
+                    // console.log('Last.fm Loved Extension: Header added');
                 }
             }
 
             // Find all track rows in this tracklist
             const trackRows = tracklist.querySelectorAll('[role="row"] .main-trackList-trackListRow');
-            console.log('Last.fm Loved Extension: Found', trackRows.length, 'track rows in tracklist');
+            // console.log('Last.fm Loved Extension: Found', trackRows.length, 'track rows in tracklist');
 
             // Also try alternative selector for Popular section
             const alternativeRows = tracklist.querySelectorAll('.main-trackList-trackListRow');
-            console.log('Last.fm Loved Extension: Found', alternativeRows.length, 'alternative track rows');
+            // console.log('Last.fm Loved Extension: Found', alternativeRows.length, 'alternative track rows');
 
             // Use whichever selector found more rows
             const rowsToProcess = trackRows.length > 0 ? trackRows : alternativeRows;
@@ -809,26 +877,18 @@
 
                 // Modify the grid template for this row to match header (playlist views only)
                 const currentGridTemplate = row.style.gridTemplateColumns;
-                if (currentGridTemplate && !currentGridTemplate.includes('lastfm')) {
-                    // Check if this is an album view - skip album views for now
-                    const headerRow = tracklist.querySelector('.main-trackList-trackListHeaderRow');
-                    const isAlbumView = headerRow && headerRow.querySelectorAll('[role="columnheader"]').length === 4;
-
-                    if (!isAlbumView) {
-                        // Playlist view only: Insert between Date added and My Scrobbles
-                        const newGridTemplate = currentGridTemplate.replace(
-                            '[var2] 2fr [var3] 2fr',
-                            '[var2] 2fr [lastfm] 120px [var3] 2fr'
-                        );
-                        row.style.gridTemplateColumns = newGridTemplate;
-                    }
-                } else if (!currentGridTemplate) {
-                    // Fallback: set the full grid template if none exists (playlist views only)
-                    const headerRow = tracklist.querySelector('.main-trackList-trackListHeaderRow');
-                    const isAlbumView = headerRow && headerRow.querySelectorAll('[role="columnheader"]').length === 4;
-
-                    if (!isAlbumView) {
-                        row.style.gridTemplateColumns = '[index] 16px [first] 5fr [var1] 3fr [var2] 2fr [lastfm] 120px [var3] 2fr [last] minmax(120px, 1fr) !important';
+                const headerRow = tracklist.querySelector('.main-trackList-trackListHeaderRow');
+                const isAlbumView = headerRow && headerRow.querySelectorAll('[role="columnheader"]').length === 4;
+                const hasSortPlayExtension = headerRow && headerRow.querySelector('.sort-play-column') !== null;
+                
+                if (!isAlbumView && (!currentGridTemplate || !currentGridTemplate.includes('120px') || currentGridTemplate.split(' ').length < 14)) {
+                    // Always set the complete grid template for playlist views
+                    if (hasSortPlayExtension) {
+                        // 7-column layout with sort-play - simple equal columns approach
+                        row.style.gridTemplateColumns = '16px 5fr 3fr 2fr 120px 2fr minmax(120px, 1fr) !important';
+                    } else {
+                        // 6-column layout without sort-play
+                        row.style.gridTemplateColumns = '16px 5fr 3fr 2fr 120px minmax(120px, 1fr) !important';
                     }
                 }
 
@@ -836,7 +896,7 @@
                 const trackLink = row.querySelector('.main-trackList-rowTitle');
 
                 if (!trackLink) {
-                    console.log(`Last.fm Loved Extension: Row ${index} missing track info, skipping`);
+                    // console.log(`Last.fm Loved Extension: Row ${index} missing track info, skipping`);
                     return;
                 }
 
@@ -878,11 +938,11 @@
                 }
 
                 if (!artistName) {
-                    console.log(`Last.fm Loved Extension: Row ${index} missing artist info, skipping`);
+                    // console.log(`Last.fm Loved Extension: Row ${index} missing artist info, skipping`);
                     return;
                 }
 
-                console.log(`Last.fm Loved Extension: Row ${index} - Track: "${trackName}", Artist: "${artistName}"`);
+                // console.log(`Last.fm Loved Extension: Row ${index} - Track: "${trackName}", Artist: "${artistName}"`);
 
                 // console.log(`TRACKLIST - Track: "${trackName}", Artist: "${artistName}"`);
                 // console.log(`Last.fm Loved Extension: Adding heart for ${artistName} - ${trackName}`);
@@ -890,16 +950,16 @@
                 // Handle Popular section (no headers, different structure)
                 const isPopularSection = !tracklist.querySelector('.main-trackList-trackListHeaderRow');
 
-                console.log(`Last.fm Loved Extension: Row ${index} - isPopularSection: ${isPopularSection}`);
-                console.log(`Last.fm Loved Extension: Row ${index} - row classes:`, row.className);
-                console.log(`Last.fm Loved Extension: Row ${index} - row HTML:`, row.outerHTML.substring(0, 200) + '...');
+                // console.log(`Last.fm Loved Extension: Row ${index} - isPopularSection: ${isPopularSection}`);
+                // console.log(`Last.fm Loved Extension: Row ${index} - row classes:`, row.className);
+                // console.log(`Last.fm Loved Extension: Row ${index} - row HTML:`, row.outerHTML.substring(0, 200) + '...');
 
                 if (isPopularSection) {
                     // For Popular section, add heart between play count and add to playlist button
                     const endSection = row.querySelector('.main-trackList-rowSectionEnd');
                     const addToPlaylistButton = endSection?.querySelector('.main-trackList-curationButton');
 
-                    console.log(`Last.fm Loved Extension: endSection found: ${!!endSection}, addToPlaylistButton found: ${!!addToPlaylistButton}`);
+                    // console.log(`Last.fm Loved Extension: endSection found: ${!!endSection}, addToPlaylistButton found: ${!!addToPlaylistButton}`);
 
                     if (endSection && addToPlaylistButton) {
                         // Create heart container for Popular section
@@ -928,13 +988,13 @@
                         // Mark the row as processed to prevent future processing
                         row.setAttribute('data-lastfm-heart-added', 'true');
 
-                        console.log(`Last.fm Loved Extension: Heart added to Popular section for row ${index}`);
+                        // console.log(`Last.fm Loved Extension: Heart added to Popular section for row ${index}`);
                     } else {
                         // Try alternative approach - look for play count column and add after it
                         const playCountElement = row.querySelector('.main-trackList-rowPlayCount');
                         const variableSection = row.querySelector('.main-trackList-rowSectionVariable');
 
-                        console.log(`Last.fm Loved Extension: Fallback - playCountElement: ${!!playCountElement}, variableSection: ${!!variableSection}`);
+                        // console.log(`Last.fm Loved Extension: Fallback - playCountElement: ${!!playCountElement}, variableSection: ${!!variableSection}`);
 
                         if (playCountElement && variableSection) {
                             // Create heart container for Popular section
@@ -963,7 +1023,7 @@
                             // Mark the row as processed to prevent future processing
                             row.setAttribute('data-lastfm-heart-added', 'true');
 
-                            console.log(`Last.fm Loved Extension: Heart added to Popular section (fallback) for row ${index}`);
+                            // console.log(`Last.fm Loved Extension: Heart added to Popular section (fallback) for row ${index}`);
                         }
                     }
                 } else {
@@ -1005,21 +1065,22 @@
                             // Mark the row as processed to prevent future processing
                             row.setAttribute('data-lastfm-heart-added', 'true');
 
-                            console.log(`Last.fm Loved Extension: Heart added to Album view for row ${index}`);
+                            // console.log(`Last.fm Loved Extension: Heart added to Album view for row ${index}`);
                         }
                     } else {
-                        // Playlist view only: Insert before My Scrobbles column
-                        const insertTarget = row.querySelector('.sort-play-column');
-                        const newAriaColindex = 5;
-
-                        if (insertTarget) {
+                        // Playlist view only: Choose insertion method based on sort-play presence
+                        const hasSortPlayExtension = row.querySelector('.sort-play-column') !== null;
+                        
+                        if (hasSortPlayExtension) {
+                            // Use the original method: insert before sort-play column
+                            const insertTarget = row.querySelector('.sort-play-column');
+                            if (insertTarget) {
                         // Create heart container as a proper column cell
                         const heartContainer = document.createElement('div');
                         heartContainer.className = 'lastfm-loved-cell main-trackList-rowSectionVariable';
                         heartContainer.setAttribute('role', 'gridcell');
-                        heartContainer.setAttribute('aria-colindex', newAriaColindex.toString());
+                        heartContainer.setAttribute('aria-colindex', '5');
                         heartContainer.style.cssText = `
-                            grid-area: auto / lastfm;
                             display: flex;
                             align-items: center;
                             justify-content: center;
@@ -1035,21 +1096,66 @@
                             heartContainer
                         );
 
-                        // Insert before the target column and update aria-colindex values
-                        row.insertBefore(heartContainer, insertTarget);
+                                // Insert before sort-play column
+                                row.insertBefore(heartContainer, insertTarget);
 
-                        // Playlist view: Update My Scrobbles and Duration columns
-                        insertTarget.setAttribute('aria-colindex', '6');
-                        const durationCell = row.querySelector('.main-trackList-rowSectionEnd');
-                        if (durationCell) {
-                            durationCell.setAttribute('aria-colindex', '7');
+                                // Update aria-colindex for sort-play and duration cells
+                                insertTarget.setAttribute('aria-colindex', '6');
+                                const durationCell = row.querySelector('.main-trackList-rowSectionEnd');
+                                if (durationCell) {
+                                    durationCell.setAttribute('aria-colindex', '7');
+                                }
+                            }
+                        } else {
+                            // Use the new method: insert after Date added cell
+                            let dateAddedCell = null;
+                            const cells = row.querySelectorAll('[role="gridcell"]');
+                            
+                            // Find Date added cell
+                            for (const cell of cells) {
+                                if (cell.getAttribute('aria-colindex') === '4') {
+                                    dateAddedCell = cell;
+                                    break;
+                                }
+                            }
+
+                            if (dateAddedCell) {
+                                // Create heart container as a proper column cell
+                                const heartContainer = document.createElement('div');
+                                heartContainer.className = 'lastfm-loved-cell main-trackList-rowSectionVariable';
+                                heartContainer.setAttribute('role', 'gridcell');
+                                heartContainer.setAttribute('aria-colindex', '5');
+                                heartContainer.style.cssText = `
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    padding: 0 8px;
+                                `;
+
+                                // Render React component
+                                ReactDOM.render(
+                                    React.createElement(LastfmLovedCell, {
+                                        artist: artistName,
+                                        track: trackName
+                                    }),
+                                    heartContainer
+                                );
+
+                                // Insert directly after Date added cell
+                                dateAddedCell.insertAdjacentElement('afterend', heartContainer);
+
+                                // Update aria-colindex for Duration cell (now becomes column 6)
+                                const durationCell = row.querySelector('.main-trackList-rowSectionEnd');
+                                if (durationCell) {
+                                    durationCell.setAttribute('aria-colindex', '6');
+                                }
+                            }
                         }
 
                         // Mark the row as processed to prevent future processing
                         row.setAttribute('data-lastfm-heart-added', 'true');
 
                         // console.log(`Last.fm Loved Extension: Heart added for row ${index}`);
-                        }
                     }
                 }
             });
@@ -1058,7 +1164,7 @@
 
     function addLovedColumnOld() {
         const playlistViews = document.querySelectorAll('.main-trackList-indexable');
-        console.log('Last.fm Loved Extension: Found', playlistViews.length, 'tracklist views');
+        // console.log('Last.fm Loved Extension: Found', playlistViews.length, 'tracklist views');
 
         playlistViews.forEach(view => {
             if (view.querySelector('.lastfm-loved-header')) return;
@@ -1195,7 +1301,7 @@
     new Spicetify.Menu.Item('Last.fm Loved Config', false, openConfigModal).register();
 
     loadConfig();
-    console.log('Last.fm Loved Extension: Configuration loaded');
+    // console.log('Last.fm Loved Extension: Configuration loaded');
 
     const observer = new MutationObserver((mutations) => {
         // Only trigger if it's not our own changes
