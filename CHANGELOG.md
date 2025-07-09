@@ -1,3 +1,11 @@
+### 1.2.1: 2025-07-09
+
+* Fix compatibility with sort-play extension in all views
+* Improve view detection using "Date added" column text instead of URL patterns
+* Remove headers from album, artist, and daylist views while maintaining heart functionality
+* Fix header misalignment issues in daylist views
+* Remove excessive console logging for better performance
+
 ### 1.2.0: 2025-07-04
 
 * Fix column positioning to work without sort-play extension dependency

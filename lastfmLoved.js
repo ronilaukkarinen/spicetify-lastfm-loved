@@ -684,11 +684,8 @@
     }
 
     function addLovedColumn() {
-        // console.log('Last.fm Loved Extension: Searching for track rows...');
-
         // Find all tracklist views
         const tracklists = document.querySelectorAll('.main-trackList-trackList.main-trackList-indexable');
-        // console.log('Last.fm Loved Extension: Found', tracklists.length, 'tracklist views');
 
         // Also check for tracklists without the indexable class (Popular section might not have it)
         const allTracklists = document.querySelectorAll('.main-trackList-trackList');
@@ -696,9 +693,27 @@
 
         // Process all tracklists (both indexable and non-indexable)
         allTracklists.forEach(tracklist => {
-            // console.log('Last.fm Loved Extension: Processing tracklist:', tracklist.className);
             // Add header if not already present
             const headerRow = tracklist.querySelector('.main-trackList-trackListHeaderRow');
+            
+            if (headerRow) {
+                // Detection for views that should NOT have headers added
+                // Look for "Date added" column text - only playlist views have this
+                const hasDateAddedColumn = Array.from(headerRow.querySelectorAll('[role="columnheader"]')).some(header => 
+                    header.textContent?.toLowerCase().includes('date added'));
+                
+                const isViewWithoutHeaders = !hasDateAddedColumn;
+                
+                // Remove existing headers from views that shouldn't have them
+                if (isViewWithoutHeaders) {
+                    const existingHeader = headerRow.querySelector('.lastfm-loved-header');
+                    if (existingHeader) {
+                        existingHeader.remove();
+                    }
+                    // Don't return here - continue processing rows for heart functionality
+                }
+            }
+            
             if (headerRow && !headerRow.querySelector('.lastfm-loved-header')) {
                 // Detect if sort-play extension is present
                 const hasSortPlayExtension = headerRow.querySelector('.sort-play-column') !== null;
@@ -711,12 +726,19 @@
                 }
                 // Modify the grid template to add space for our column
                 const currentGridTemplate = headerRow.style.gridTemplateColumns;
-                // Better album view detection that doesn't rely on exact column count
-                const isAlbumView = !headerRow.querySelector('[aria-colindex="4"]') || 
-                                   window.location.pathname.includes('/album/') || 
-                                   window.location.pathname.includes('/artist/');
+                // Detection for views that should NOT have headers added
+                // Look for "Date added" column text - only playlist views have this
+                const hasDateAddedColumn = Array.from(headerRow.querySelectorAll('[role="columnheader"]')).some(header => 
+                    header.textContent?.toLowerCase().includes('date added'));
+                
+                const isViewWithoutHeaders = !hasDateAddedColumn;
 
-                if (!isAlbumView && (!currentGridTemplate || !currentGridTemplate.includes('120px') || currentGridTemplate.split(' ').length < 14)) {
+                // Detection for views that should use playlist-style column layout
+                const isPlaylistView = hasDateAddedColumn;
+
+
+                // Only modify grid templates for playlist views that will get headers
+                if (isPlaylistView && (!currentGridTemplate || !currentGridTemplate.includes('120px') || currentGridTemplate.split(' ').length < 14)) {
                     // Always set the complete grid template for playlist views
                     if (hasSortPlayExtension) {
                         // 7-column layout with sort-play - simple equal columns approach
@@ -729,7 +751,7 @@
 
                 // Find where to insert the header - only for playlist views
 
-                if (!isAlbumView) {
+                if (isPlaylistView) {
                     // Playlist view only: Choose insertion method based on sort-play presence
                     if (hasSortPlayExtension) {
                         // Use the original method: insert before sort-play column
@@ -881,13 +903,19 @@
                 // Modify the grid template for this row to match header (playlist views only)
                 const currentGridTemplate = row.style.gridTemplateColumns;
                 const headerRow = tracklist.querySelector('.main-trackList-trackListHeaderRow');
-                // Better album view detection that doesn't rely on exact column count
-                const isAlbumView = !headerRow?.querySelector('[aria-colindex="4"]') || 
-                                   window.location.pathname.includes('/album/') || 
-                                   window.location.pathname.includes('/artist/');
+                // Detection for views that should NOT have headers added
+                // Look for "Date added" column text - only playlist views have this
+                const hasDateAddedColumn = headerRow ? Array.from(headerRow.querySelectorAll('[role="columnheader"]')).some(header => 
+                    header.textContent?.toLowerCase().includes('date added')) : false;
+                
+                const isViewWithoutHeaders = !hasDateAddedColumn;
+
+                // Detection for views that should use playlist-style column layout
+                const isPlaylistView = hasDateAddedColumn;
                 const hasSortPlayExtension = headerRow && headerRow.querySelector('.sort-play-column') !== null;
                 
-                if (!isAlbumView && (!currentGridTemplate || !currentGridTemplate.includes('120px') || currentGridTemplate.split(' ').length < 14)) {
+                // Only modify grid templates for playlist views that will get headers
+                if (isPlaylistView && (!currentGridTemplate || !currentGridTemplate.includes('120px') || currentGridTemplate.split(' ').length < 14)) {
                     // Always set the complete grid template for playlist views
                     if (hasSortPlayExtension) {
                         // 7-column layout with sort-play - simple equal columns approach
@@ -1037,46 +1065,17 @@
 
                     // Check if this is an album view or playlist view
                     const headerRow = tracklist.querySelector('.main-trackList-trackListHeaderRow');
-                    // Better album view detection that doesn't rely on exact column count
-                    const isAlbumView = !headerRow?.querySelector('[aria-colindex="4"]') || 
-                                       window.location.pathname.includes('/album/') || 
-                                       window.location.pathname.includes('/artist/');
+                    // Detection for views that should NOT have headers added
+                    // Look for "Date added" column text - only playlist views have this
+                    const hasDateAddedColumn = headerRow ? Array.from(headerRow.querySelectorAll('[role="columnheader"]')).some(header => 
+                        header.textContent?.toLowerCase().includes('date added')) : false;
+                    
+                    const isViewWithoutHeaders = !hasDateAddedColumn;
 
-                    if (isAlbumView) {
-                        // Album view: Add heart like Popular section (no grid modification)
-                        const endSection = row.querySelector('.main-trackList-rowSectionEnd');
-                        const addToLikedButton = endSection?.querySelector('.main-trackList-curationButton');
+                    // Detection for views that should use playlist-style column layout
+                    const isPlaylistView = hasDateAddedColumn;
 
-                        if (endSection && addToLikedButton) {
-                            // Create heart container for Album view
-                            const heartContainer = document.createElement('div');
-                            heartContainer.className = 'lastfm-loved-cell';
-                            heartContainer.style.cssText = `
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                margin-right: 20px;
-                                margin-left: 0;
-                            `;
-
-                            // Render React component
-                            ReactDOM.render(
-                                React.createElement(LastfmLovedCell, {
-                                    artist: artistName,
-                                    track: trackName
-                                }),
-                                heartContainer
-                            );
-
-                            // Insert before the add to liked songs button
-                            endSection.insertBefore(heartContainer, addToLikedButton);
-
-                            // Mark the row as processed to prevent future processing
-                            row.setAttribute('data-lastfm-heart-added', 'true');
-
-                            // console.log(`Last.fm Loved Extension: Heart added to Album view for row ${index}`);
-                        }
-                    } else {
+                    if (isPlaylistView) {
                         // Playlist view only: Choose insertion method based on sort-play presence
                         const hasSortPlayExtension = row.querySelector('.sort-play-column') !== null;
                         
@@ -1165,6 +1164,40 @@
                         row.setAttribute('data-lastfm-heart-added', 'true');
 
                         // console.log(`Last.fm Loved Extension: Heart added for row ${index}`);
+                    } else {
+                        // Non-playlist views (album, artist, daylist): Add heart like Popular section (no grid modification)
+                        const endSection = row.querySelector('.main-trackList-rowSectionEnd');
+                        const addToLikedButton = endSection?.querySelector('.main-trackList-curationButton');
+
+                        if (endSection && addToLikedButton) {
+                            // Create heart container for non-playlist views
+                            const heartContainer = document.createElement('div');
+                            heartContainer.className = 'lastfm-loved-cell';
+                            heartContainer.style.cssText = `
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                margin-right: 20px;
+                                margin-left: 0;
+                            `;
+
+                            // Render React component
+                            ReactDOM.render(
+                                React.createElement(LastfmLovedCell, {
+                                    artist: artistName,
+                                    track: trackName
+                                }),
+                                heartContainer
+                            );
+
+                            // Insert before the add to liked songs button
+                            endSection.insertBefore(heartContainer, addToLikedButton);
+
+                            // Mark the row as processed to prevent future processing
+                            row.setAttribute('data-lastfm-heart-added', 'true');
+
+                            // console.log(`Last.fm Loved Extension: Heart added to non-playlist view for row ${index}`);
+                        }
                     }
                 }
             });
