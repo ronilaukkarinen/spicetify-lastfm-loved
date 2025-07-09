@@ -711,7 +711,10 @@
                 }
                 // Modify the grid template to add space for our column
                 const currentGridTemplate = headerRow.style.gridTemplateColumns;
-                const isAlbumView = headerRow.querySelectorAll('[role="columnheader"]').length === 4;
+                // Better album view detection that doesn't rely on exact column count
+                const isAlbumView = !headerRow.querySelector('[aria-colindex="4"]') || 
+                                   window.location.pathname.includes('/album/') || 
+                                   window.location.pathname.includes('/artist/');
 
                 if (!isAlbumView && (!currentGridTemplate || !currentGridTemplate.includes('120px') || currentGridTemplate.split(' ').length < 14)) {
                     // Always set the complete grid template for playlist views
@@ -878,7 +881,10 @@
                 // Modify the grid template for this row to match header (playlist views only)
                 const currentGridTemplate = row.style.gridTemplateColumns;
                 const headerRow = tracklist.querySelector('.main-trackList-trackListHeaderRow');
-                const isAlbumView = headerRow && headerRow.querySelectorAll('[role="columnheader"]').length === 4;
+                // Better album view detection that doesn't rely on exact column count
+                const isAlbumView = !headerRow?.querySelector('[aria-colindex="4"]') || 
+                                   window.location.pathname.includes('/album/') || 
+                                   window.location.pathname.includes('/artist/');
                 const hasSortPlayExtension = headerRow && headerRow.querySelector('.sort-play-column') !== null;
                 
                 if (!isAlbumView && (!currentGridTemplate || !currentGridTemplate.includes('120px') || currentGridTemplate.split(' ').length < 14)) {
@@ -1031,7 +1037,10 @@
 
                     // Check if this is an album view or playlist view
                     const headerRow = tracklist.querySelector('.main-trackList-trackListHeaderRow');
-                    const isAlbumView = headerRow && headerRow.querySelectorAll('[role="columnheader"]').length === 4;
+                    // Better album view detection that doesn't rely on exact column count
+                    const isAlbumView = !headerRow?.querySelector('[aria-colindex="4"]') || 
+                                       window.location.pathname.includes('/album/') || 
+                                       window.location.pathname.includes('/artist/');
 
                     if (isAlbumView) {
                         // Album view: Add heart like Popular section (no grid modification)
