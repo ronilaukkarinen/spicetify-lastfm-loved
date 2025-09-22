@@ -524,7 +524,7 @@
     function addSideNavHeart() {
         const sideNavNowPlaying = document.querySelector('.main-nowPlayingView-contextItemInfo');
         if (!sideNavNowPlaying) {
-            console.log('[LastFM Debug] Side nav now playing not found - selector: .main-nowPlayingView-contextItemInfo');
+            // console.log('[LastFM Debug] Side nav now playing not found - selector: .main-nowPlayingView-contextItemInfo');
             return; // No side nav now playing
         }
 
@@ -598,7 +598,7 @@
         }
 
         if (!buttonArea) {
-            console.log('[LastFM Debug] Side nav button area not found with any selector');
+            // console.log('[LastFM Debug] Side nav button area not found with any selector');
         }
 
         if (buttonArea) {
@@ -634,10 +634,9 @@
     }
 
     function addNowPlayingHeart() {
-        console.log('[LastFM Debug] addNowPlayingHeart called');
         const nowPlayingWidget = document.querySelector('[data-testid="now-playing-widget"]');
         if (!nowPlayingWidget) {
-            console.log('[LastFM Debug] Now playing widget not found - selector: [data-testid="now-playing-widget"]');
+            // console.log('[LastFM Debug] Now playing widget not found - selector: [data-testid="now-playing-widget"]');
             return; // No now playing widget
         }
 
@@ -725,7 +724,7 @@
         }
 
         if (!buttonArea) {
-            console.log('[LastFM Debug] Now playing button area not found with any selector');
+            // console.log('[LastFM Debug] Now playing button area not found with any selector');
         }
 
         if (buttonArea) {
@@ -801,24 +800,15 @@
                 const isPlaylistView = hasDateAddedColumn;
 
                 // Set grid templates based on view type
-                if (!currentGridTemplate || !currentGridTemplate.includes('120px') || currentGridTemplate.split(' ').length < 6) {
-                    if (isPlaylistView) {
-                        // Playlist views have Date Added column
-                        if (hasSortPlayExtension) {
-                            // 7-column layout: #, Title, Album, Date added, Last.fm loved, My scrobbles, Duration
-                            headerRow.style.gridTemplateColumns = '16px 5fr 3fr 2fr 120px 2fr minmax(120px, 1fr) !important';
-                        } else {
-                            // 6-column layout: #, Title, Album, Date added, Last.fm loved, Duration
-                            headerRow.style.gridTemplateColumns = '16px 5fr 3fr 2fr 120px minmax(120px, 1fr) !important';
-                        }
-                    } else {
-                        // Album/Artist views: Don't modify existing grid, just add header in right position
-                        // The grid will be handled by individual row insertion logic
-                    }
+                if (isPlaylistView) {
+                    // Playlist views have Date Added column
+                    // Always use the same grid template for playlist views regardless of sort-play
+                    headerRow.style.setProperty('grid-template-columns', '16px 5fr 3fr 2fr 2fr minmax(120px, 1fr)', 'important');
                 }
 
                 // Add headers to both playlist views AND other views with proper track structures
                 const shouldAddHeader = isPlaylistView || (headerRow.querySelectorAll('[role="columnheader"]').length >= 3);
+                // console.log(`[LastFM Debug] Header logic - isPlaylistView: ${isPlaylistView}, headerCount: ${headerRow.querySelectorAll('[role="columnheader"]').length}, shouldAddHeader: ${shouldAddHeader}`);
 
                 if (shouldAddHeader) {
                     // Playlist view only: Choose insertion method based on sort-play presence
@@ -948,8 +938,10 @@
                         }
                     }
                 } else if (!isPlaylistView && shouldAddHeader) {
+                    // console.log(`[LastFM Debug] Processing non-playlist header - isPlaylistView: ${isPlaylistView}, shouldAddHeader: ${shouldAddHeader}`);
                     // Non-playlist views (album, artist): Add header as 2nd-to-last column
                     const durationColumn = headerRow.querySelector('.main-trackList-rowSectionEnd');
+                    // console.log(`[LastFM Debug] Duration column found: ${!!durationColumn}`);
                     if (durationColumn) {
                         // Create header cell for non-playlist views
                         const headerCell = document.createElement('div');
@@ -992,11 +984,22 @@
 
                         // Insert before the duration column to make it 2nd-to-last
                         headerRow.insertBefore(headerCell, durationColumn);
+
+                        // Apply correct grid template for album view
+                        headerRow.style.setProperty('grid-template-columns', '16px 6fr 3fr 3fr', 'important');
+                        // console.log(`[LastFM Debug] Set album header grid to: ${headerRow.style.gridTemplateColumns}`);
                     }
                 }
 
                 if (shouldAddHeader) {
                     // Header added successfully
+                }
+
+                // Apply grid template for non-playlist views even if header already exists
+                if (!isPlaylistView && shouldAddHeader && headerRow) {
+                    // console.log(`[LastFM Debug] Applying grid template to album header (existing header found)`);
+                    headerRow.style.setProperty('grid-template-columns', '16px 6fr 3fr 3fr', 'important');
+                    // console.log(`[LastFM Debug] Album header grid applied: ${headerRow.style.gridTemplateColumns}`);
                 }
             }
 
@@ -1026,17 +1029,15 @@
                 // Detection for views that should use playlist-style column layout
                 const isPlaylistView = hasDateAddedColumn;
                 const hasSortPlayExtension = headerRow && headerRow.querySelector('.sort-play-column') !== null;
+
                 
                 // Only modify grid templates for playlist views that will get headers
-                if (isPlaylistView && (!currentGridTemplate || !currentGridTemplate.includes('120px') || currentGridTemplate.split(' ').length < 14)) {
-                    // Always set the complete grid template for playlist views
-                    if (hasSortPlayExtension) {
-                        // 7-column layout with sort-play - simple equal columns approach
-                        row.style.gridTemplateColumns = '16px 5fr 3fr 2fr 120px 2fr minmax(120px, 1fr) !important';
-                    } else {
-                        // 6-column layout without sort-play
-                        row.style.gridTemplateColumns = '16px 5fr 3fr 2fr 120px minmax(120px, 1fr) !important';
-                    }
+                if (isPlaylistView) {
+                    // Always use the same grid template for playlist views regardless of sort-play
+                    row.style.setProperty('grid-template-columns', '16px 5fr 3fr 2fr 2fr minmax(120px, 1fr)', 'important');
+                } else {
+                    // Album/Artist views - 4-column layout
+                    row.style.setProperty('grid-template-columns', '16px 6fr 3fr 3fr', 'important');
                 }
 
                 // Extract track and artist info from play button aria-label (most reliable method)
@@ -1050,17 +1051,13 @@
                     if (playMatch) {
                         trackName = playMatch[1].trim();
                         artistName = playMatch[2].trim();
-                        console.log(`[LastFM Debug] Row ${index} extracted from aria-label: "${trackName}" by "${artistName}"`);
+                        // console.log(`[LastFM Debug] Row ${index} extracted from aria-label: "${trackName}" by "${artistName}"`);
                     } else {
-                        console.log(`[LastFM Debug] Row ${index} aria-label format not recognized:`, ariaLabel);
+                        // console.log(`[LastFM Debug] Row ${index} aria-label format not recognized:`, ariaLabel);
                         return;
                     }
                 } else {
-                    console.log(`[LastFM Debug] Row ${index} no play button aria-label found, skipping`);
-                    if (index === 0) {
-                        console.log(`[LastFM Debug] Row ${index} HTML:`, row.outerHTML.substring(0, 800));
-                        console.log(`[LastFM Debug] Row ${index} available links:`, Array.from(row.querySelectorAll('a')).map(a => `${a.textContent?.trim()} (${a.href})`));
-                    }
+                    // console.log(`[LastFM Debug] Row ${index} no play button aria-label found, skipping`);
                     return;
                 }
 
@@ -1072,12 +1069,12 @@
                     artistLink = row.querySelector('.main-trackInfo-artists a, [class*="artist"] a, [data-testid*="artist"] a');
                 }
 
-                console.log(`[LastFM Debug] Row ${index} artistLink found:`, !!artistLink);
+                // console.log(`[LastFM Debug] Row ${index} artistLink found:`, !!artistLink);
 
                 if (artistLink) {
                     // Regular track list with artist link
                     artistName = artistLink.textContent?.trim();
-                    console.log(`[LastFM Debug] Row ${index} artist from link:`, artistName);
+                    // console.log(`[LastFM Debug] Row ${index} artist from link:`, artistName);
                 } else {
                     // Popular section - extract artist name from play button aria-label
                     const playButton = row.querySelector('.main-trackList-rowImagePlayButton');
@@ -1107,16 +1104,16 @@
                 }
 
                 if (!artistName) {
-                    console.log(`[LastFM Debug] Row ${index} missing artist info, skipping`);
+                    // console.log(`[LastFM Debug] Row ${index} missing artist info, skipping`);
                     return;
                 }
 
                 if (!trackName) {
-                    console.log(`[LastFM Debug] Row ${index} missing track info, skipping`);
+                    // console.log(`[LastFM Debug] Row ${index} missing track info, skipping`);
                     return;
                 }
 
-                console.log(`[LastFM Debug] Row ${index} found track: "${trackName}" by "${artistName}"`);
+                // console.log(`[LastFM Debug] Row ${index} found track: "${trackName}" by "${artistName}"`);
 
                 // console.log(`Last.fm Loved Extension: Row ${index} - Track: "${trackName}", Artist: "${artistName}"`);
 
@@ -1126,15 +1123,15 @@
                 // Handle Popular section (no headers, different structure)
                 const isPopularSection = !tracklist.querySelector('.main-trackList-trackListHeaderRow');
 
-                console.log(`[LastFM Debug] Row ${index} - isPopularSection: ${isPopularSection}`);
+                // console.log(`[LastFM Debug] Row ${index} - isPopularSection: ${isPopularSection}`);
 
                 if (isPopularSection) {
-                    console.log(`[LastFM Debug] Row ${index} - trying popular section insertion`);
+                    // console.log(`[LastFM Debug] Row ${index} - trying popular section insertion`);
                     // For Popular section, add heart between play count and add to playlist button
                     const endSection = row.querySelector('.main-trackList-rowSectionEnd');
                     const addToPlaylistButton = endSection?.querySelector('.main-trackList-curationButton');
 
-                    console.log(`[LastFM Debug] Row ${index} popular - endSection: ${!!endSection}, addToPlaylistButton: ${!!addToPlaylistButton}`);
+                    // console.log(`[LastFM Debug] Row ${index} popular - endSection: ${!!endSection}, addToPlaylistButton: ${!!addToPlaylistButton}`);
 
                     if (endSection && addToPlaylistButton) {
                         // Create heart container for Popular section
@@ -1164,13 +1161,13 @@
                         row.setAttribute('data-lastfm-heart-added', 'true');
                         heartsAdded++;
 
-                        console.log(`[LastFM Debug] Heart added to popular section ${index}: ${trackName} by ${artistName}`);
+                        // console.log(`[LastFM Debug] Heart added to popular section ${index}: ${trackName} by ${artistName}`);
                     } else {
                         // Try alternative approach - look for play count column and add after it
                         const playCountElement = row.querySelector('.main-trackList-rowPlayCount');
                         const variableSection = row.querySelector('.main-trackList-rowSectionVariable');
 
-                        console.log(`[LastFM Debug] Row ${index} popular fallback - playCountElement: ${!!playCountElement}, variableSection: ${!!variableSection}`);
+                        // console.log(`[LastFM Debug] Row ${index} popular fallback - playCountElement: ${!!playCountElement}, variableSection: ${!!variableSection}`);
 
                         if (playCountElement && variableSection) {
                             // Create heart container for Popular section
@@ -1200,11 +1197,11 @@
                             row.setAttribute('data-lastfm-heart-added', 'true');
                             heartsAdded++;
 
-                            console.log(`[LastFM Debug] Heart added to popular section (fallback) ${index}: ${trackName} by ${artistName}`);
+                            // console.log(`[LastFM Debug] Heart added to popular section (fallback) ${index}: ${trackName} by ${artistName}`);
                         }
                     }
                 } else {
-                    console.log(`[LastFM Debug] Row ${index} - trying regular tracklist insertion`);
+                    // console.log(`[LastFM Debug] Row ${index} - trying regular tracklist insertion`);
                     // Original logic for regular track lists with headers
 
                     // Check if this is an album view or playlist view
@@ -1219,10 +1216,10 @@
                     // Detection for views that should use playlist-style column layout
                     const isPlaylistView = hasDateAddedColumn;
 
-                    console.log(`[LastFM Debug] Row ${index} - isPlaylistView: ${isPlaylistView}`);
+                    // console.log(`[LastFM Debug] Row ${index} - isPlaylistView: ${isPlaylistView}`);
 
                     if (isPlaylistView) {
-                        console.log(`[LastFM Debug] Row ${index} - trying playlist view insertion`);
+                        // console.log(`[LastFM Debug] Row ${index} - trying playlist view insertion`);
                         // Playlist view only: Choose insertion method based on sort-play presence
                         const hasSortPlayExtension = row.querySelector('.sort-play-column') !== null;
                         
@@ -1323,16 +1320,13 @@
                         row.setAttribute('data-lastfm-heart-added', 'true');
                         heartsAdded++;
 
-                        console.log(`[LastFM Debug] Heart added to playlist row ${index}: ${trackName} by ${artistName}`);
+                        // console.log(`[LastFM Debug] Heart added to playlist row ${index}: ${trackName} by ${artistName}`);
                     } else {
-                        console.log(`[LastFM Debug] Row ${index} - trying non-playlist view insertion`);
+                        // console.log(`[LastFM Debug] Row ${index} - trying non-playlist view insertion`);
                         // Non-playlist views (album, artist): Insert heart as 2nd-to-last column
                         const endSection = row.querySelector('.main-trackList-rowSectionEnd');
 
-                        console.log(`[LastFM Debug] Row ${index} non-playlist - endSection: ${!!endSection}`);
-                        if (endSection) {
-                            console.log(`[LastFM Debug] Row ${index} endSection HTML:`, endSection.innerHTML);
-                        }
+                        // console.log(`[LastFM Debug] Row ${index} non-playlist - endSection: ${!!endSection}`);
 
                         if (endSection) {
                             // Create heart container as a proper grid cell
@@ -1355,22 +1349,36 @@
                                 heartContainer
                             );
 
-                            // Insert before the duration column (endSection) to make it 2nd-to-last
-                            row.insertBefore(heartContainer, endSection);
+                            // Insert inside endSection, between Add to Liked Songs button and duration
+                            const addToLikedButton = endSection.querySelector('button[aria-label*="Add to Liked Songs"]');
+                            const durationText = endSection.querySelector('.e-91000-text');
+
+                            if (addToLikedButton && durationText) {
+                                // Insert after the Add to Liked Songs button, before duration
+                                endSection.insertBefore(heartContainer, durationText);
+                            } else {
+                                // Fallback: insert at the beginning of endSection
+                                endSection.insertBefore(heartContainer, endSection.firstChild);
+                            }
+
+                            // Apply the same grid template to album view rows as the header
+                            // console.log(`[LastFM Debug] Row ${index} before grid change:`, row.style.gridTemplateColumns);
+                            row.style.setProperty('grid-template-columns', '16px 6fr 3fr 3fr', 'important');
+                            // console.log(`[LastFM Debug] Row ${index} after grid change:`, row.style.gridTemplateColumns);
 
                             // Mark the row as processed to prevent future processing
                             row.setAttribute('data-lastfm-heart-added', 'true');
                             heartsAdded++;
 
-                            console.log(`[LastFM Debug] Heart added to non-playlist row ${index}: ${trackName} by ${artistName}`);
+                            // console.log(`[LastFM Debug] Heart added to non-playlist row ${index}: ${trackName} by ${artistName}`);
                         }
                     }
                 }
             });
 
-            if (rowsToProcess.length > 0) {
-                console.log(`[LastFM Debug] Processed ${rowsToProcess.length} rows, added ${heartsAdded} hearts`);
-            }
+            // if (rowsToProcess.length > 0) {
+            //     console.log(`[LastFM Debug] Processed ${rowsToProcess.length} rows, added ${heartsAdded} hearts`);
+            // }
         });
     }
 
@@ -1513,55 +1521,16 @@
     new Spicetify.Menu.Item('Last.fm Loved Config', false, openConfigModal).register();
 
     loadConfig();
-    console.log('[LastFM Debug] Extension loaded, config loaded');
+    // console.log('[LastFM Debug] Extension loaded, config loaded');
 
     // Debug function to check current DOM structure
     function debugSpotifyDOM() {
-        console.log('[LastFM Debug] === Spotify DOM Check ===');
-
-        // Check for now playing widget
-        const nowPlayingWidget = document.querySelector('[data-testid="now-playing-widget"]');
-        console.log('[LastFM Debug] Now playing widget:', !!nowPlayingWidget);
-
-        if (nowPlayingWidget) {
-            // Check for various button areas
-            const oldButtonArea = nowPlayingWidget.querySelector('.ZbFkATBbLkWh2SHMXDt6');
-            console.log('[LastFM Debug] Old now playing button area (.ZbFkATBbLkWh2SHMXDt6):', !!oldButtonArea);
-
-            // Try to find new button area with different selectors
-            const buttons = nowPlayingWidget.querySelectorAll('button');
-            console.log('[LastFM Debug] Total buttons in now playing:', buttons.length);
-
-            // Look for control buttons area
-            const controlButtons = nowPlayingWidget.querySelector('[data-testid="control-button-wrapper"]');
-            console.log('[LastFM Debug] Control buttons wrapper:', !!controlButtons);
-
-            // Check for different potential containers
-            const trackInfo = nowPlayingWidget.querySelector('.main-trackInfo-container');
-            console.log('[LastFM Debug] Track info container:', !!trackInfo);
-        }
-
-        // Check for side nav
-        const sideNav = document.querySelector('.main-nowPlayingView-contextItemInfo');
-        console.log('[LastFM Debug] Side nav now playing:', !!sideNav);
-
-        if (sideNav) {
-            const oldButtonArea = sideNav.querySelector('.O5NOY8Xw4NH0IhBZu8tm');
-            console.log('[LastFM Debug] Old side nav button area (.O5NOY8Xw4NH0IhBZu8tm):', !!oldButtonArea);
-        }
-
-        // Check for tracklists
-        const tracklists = document.querySelectorAll('.main-trackList-trackList');
-        console.log('[LastFM Debug] Tracklists found:', tracklists.length);
-
-        console.log('[LastFM Debug] === End DOM Check ===');
+        // console.log('[LastFM Debug] === Spotify DOM Check ===');
+        // Debug function available for manual debugging
     }
 
     // Add debug command to window for manual checking
     window.debugSpotifyDOM = debugSpotifyDOM;
-
-    // Run debug check after a short delay
-    setTimeout(debugSpotifyDOM, 2000);
 
     // Throttle execution to prevent infinite loops and crashes
     let isProcessing = false;
@@ -1600,7 +1569,7 @@
                         addNowPlayingHeart();
                         addSideNavHeart();
                     } catch (error) {
-                        console.error('[LastFM Debug] Error in observer:', error);
+                        console.error('LastFM Extension error:', error);
                     } finally {
                         isProcessing = false;
                     }
