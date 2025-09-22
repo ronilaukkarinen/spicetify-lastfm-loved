@@ -1,3 +1,7 @@
+### 1.2.2: 2025-09-22
+
+* Fix hearts not showing up with Spotify/Spicetify updates, avoid using obfuscated class names
+
 ### 1.2.1: 2025-07-09
 
 * Fix compatibility with sort-play extension in all views
