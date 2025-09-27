@@ -69,9 +69,18 @@
 
 #### Manual installation
 
+On Windows make sure you have lastfmLoved.js in `C:\Users\YourUsername\AppData\Roaming\spicetify\Extensions`. On Linux/Mac:
+
 ```bash
-cd ~/.config/spicetify/Extensions
+cd $HOME/.config/spicetify/Extensions
 git clone https://github.com/ronilaukkarinen/spicetify-lastfm-loved.git
+cd spicetify-lastfm-loved
+cp lastfmLoved.js ..
+cd ..
+```
+
+Apply:
+```
 spicetify config extensions lastfmLoved.js
 spicetify apply
 ```
